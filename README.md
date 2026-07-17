@@ -30,6 +30,19 @@ It is a **single sheet** (no cross-worksheet references). Excel-like in-cell
 - **Feature flags** — every capability is independently on/off; a disabled feature
   registers no affordance and carries no cost.
 
+## Live demos
+
+Interactive demos are hosted on GitHub Pages — **<https://pnjacket.github.io/mini-grid/>**:
+
+- [Kitchen-sink](https://pnjacket.github.io/mini-grid/demo/kitchen-sink.html) — every capability with live toggles
+- [1M-row grid](https://pnjacket.github.io/mini-grid/demo/index.html) — virtualization at scale
+- [Formulas](https://pnjacket.github.io/mini-grid/demo/formula.html) — opt-in in-cell formula engine
+- [Header region](https://pnjacket.github.io/mini-grid/demo/header.html) — sort/filter/resize/reorder/freeze + column management
+- [Configurable menus](https://pnjacket.github.io/mini-grid/demo/menu.html) — context-menu customization
+- [i18n + RTL](https://pnjacket.github.io/mini-grid/demo/i18n.html) — locale-aware formatting and right-to-left layout
+
+Plus the [TypeDoc API reference](https://pnjacket.github.io/mini-grid/api/index.html).
+
 ## Install
 
 ```sh
