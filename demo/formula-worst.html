@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mini-grid — worst-case: chained FORECAST.ETS (PERF-RECALC-WORST)</title>
+    <style>
+      html, body { margin: 0; font-family: system-ui, sans-serif; }
+      header { padding: 8px 12px; border-bottom: 1px solid #ddd; font-size: 14px; }
+      #status { color: #555; }
+      .note { margin: 6px 12px; font-size: 12px; color: #666; }
+      .note code { background: #f3f3f3; padding: 1px 4px; border-radius: 3px; }
+      #perf { margin: 8px 12px; font-size: 13px; }
+      #perf table { border-collapse: collapse; }
+      #perf td { padding: 2px 12px 2px 0; }
+      #perf td:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+      #app { position: relative; height: calc(100vh - 240px); margin: 8px 12px; border: 1px solid #ddd; }
+      [data-mini-grid], [data-mini-grid] .mg-scroll { height: 100%; }
+      [data-mini-grid] .mg-header { height: 28px; }
+      button { margin: 4px 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      mini-grid — <strong>WORST CASE: chained FORECAST.ETS</strong> · <span id="status">building…</span>
+    </header>
+    <p class="note">
+      After the v1.7 root-finder optimization pass, the slowest built-in is
+      <strong>FORECAST.ETS</strong> (~80µs/call over a 24-point window — ~40× the <code>COUNTIF</code>
+      path — because Holt-Winters runs a smoothing-parameter grid-search per call). Each forecast cell
+      <code>FORECAST.ETS</code>-forecasts the next point from the <em>W</em> cells above it in its own
+      column (a deep vertical chain), plus a value-neutral <code>+ 0*B{row}</code> term that injects an
+      editable dependency at every row — so a <em>single</em> edit to <code>B1</code> cascades the
+      whole graph, while a <code>B{last}</code> edit stays a tiny sub-graph.
+      Params: <code>?rows=</code> (default 3000), <code>?cols=</code> (default 4),
+      <code>?window=</code> (default 24), <code>?season=</code> (default 4).
+    </p>
+    <div id="perf"></div>
+    <button id="editHead">Edit head cell A1 (cascade full graph)</button>
+    <button id="editLeaf">Edit leaf cell (tiny subgraph)</button>
+    <button id="recalc">Full recalc</button>
+    <div id="app"></div>
+    <script type="module" src="./formula-worst.js"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+=== AFTER ===
+per-call cost over a 20-cell range, 300,000 calls each:
+
+  AVERAGEIF(range,">10")          191 ns/call   (57 ms / 300,000)
+  VLOOKUP(k,tbl,2,FALSE)          188 ns/call   (56 ms / 300,000)
+  COUNTIF(range,">10")            176 ns/call   (53 ms / 300,000)
+  SUMIF(range,">10")              160 ns/call   (48 ms / 300,000)
+  SUMPRODUCT(r1,r2)               141 ns/call   (42 ms / 300,000)
+  SUM(range)                      104 ns/call   (31 ms / 300,000)
+  VLOOKUP(k,tbl,2,TRUE)            79 ns/call   (24 ms / 300,000)
+  MATCH(k,range,1)                 34 ns/call   (10 ms / 300,000)
+  INDEX(tbl,10,2)                  27 ns/call   (8 ms / 300,000)

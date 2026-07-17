@@ -1,0 +1,144 @@
+# Product-Profile Manifest — single machine-readable source of truth for the doc set.
+# Human index (docs/README.md) is DERIVED from this. Keep them in lockstep.
+# Doc maturity only; implementation status (Verified rung) is tracked by Delivery Process.
+
+product: mini-grid
+packaging: per-concern
+
+# Traits captured at intake (Interview rounds 1–5). These switch Module concerns on.
+traits:
+  interface_kinds: [library, ui, events]   # framework-agnostic core lib + UI component that emits events
+  interactive_ui: true                      # → User Experience, Accessibility (a11y)
+  deployed_service: false                   # client-side library; no server → Operations/Observability ABSENT
+  persists_data: false                      # no datastore of its own; data is host-supplied (in-memory / adapter)
+  third_party_deps: true                    # framework peer-deps (React/Vue/Svelte adapters), export lib → Integrations
+  perf_scale_needs: true                    # ~1M-row virtualization is central → Performance & Scalability
+  multi_locale: true                        # i18n + RTL in scope → Internationalization
+  commercial: true                          # distributed MIT-licensed package → Business & Legal (light)
+  regulated: false
+  security_risk: []                         # no auth/pii-store/payments/network of its own; XSS is the real risk,
+                                            # carried by keeping Security's threat-model sub-aspect in scope.
+
+# One entry per concern. Always-present = Core (11.1–11.6) + Baseline (11.7–11.8).
+# out_of_scope_subaspects keys are the canonical `key` column values from each concern spec.
+# Kind is recorded in each doc's Non-goals: `absent` (subject doesn't exist — trait justifies, no re-entry
+# note) vs `deferred` (calibrated out — a [FUTURE-SCOPE] re-entry note is owed).
+concerns:
+  product-and-requirements:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [market-competitive-context, stakeholders-decision-makers]   # absent
+
+  domain-and-data:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [persistence-storage-schema, consistency-transactions, migrations-versioning, reference-seed-data]   # absent (no datastore of its own)
+
+  architecture:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [logical-deployment-topology]   # absent (client-side library, no deployment topology)
+
+  interfaces-and-contracts:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [http-rpc-api-surface, cli-surface]   # absent (subtypes in scope: library + ui + events)
+
+  quality-and-testing:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: []
+
+  delivery-process:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: []
+
+  security-and-privacy:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [secrets-credential-handling, authentication-mechanism, authorization, session-management, encryption]   # absent (no server/auth/secrets/sessions)
+
+  governance-and-compliance:
+    in_scope: true
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [audit-requirements, compliance-framework-mapping, records-retention-data-residency, consent-management]   # absent (unregulated client library)
+
+  user-experience:
+    in_scope: true                          # trait: interactive_ui
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [navigation-ia-contract]   # absent (single embeddable component; no app-level routing/nav)
+
+  operations-and-infrastructure:
+    in_scope: false                         # ABSENT — no deployed running service (client-side library)
+
+  observability-and-monitoring:
+    in_scope: false                         # ABSENT — no deployed running service
+
+  integrations-and-external-dependencies:
+    in_scope: true                          # trait: third_party_deps
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: []
+
+  performance-and-scalability:
+    in_scope: true                          # trait: perf_scale_needs
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: []
+
+  accessibility-and-internationalization:
+    in_scope: true                          # traits: interactive_ui (a11y) + multi_locale (i18n)
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [translation-process]   # absent (component externalizes strings; host owns the translation workflow)
+
+  business-and-legal:
+    in_scope: true                          # trait: commercial (distributed MIT package) — light
+    current_rung: contract-grade
+    target_rung: contract-grade
+    out_of_scope_subaspects: [tier-capability-entitlements-limits, pricing, eula-tos, business-slas, contractual-agreements]   # absent (MIT OSS: no tiers/pricing/paid SLAs/contracts/EULA)
+
+# Feature deltas (doc-feature, spec: docs/formula-support.md + docs/formula-functions.md) —
+# DOC-MATURITY FACTS ONLY per the header above: build status lives in IMPLEMENTATION.md,
+# doc↔code correspondence in bindings.yaml.
+#   v1.5 formula support: opt-in in-cell formulas (CAP-FORMULA / CAP-FORMULA-FN) — ADDITIVE delta
+#     spanning EXISTING concerns (P&R, Domain, Interfaces, Performance, Security, Architecture,
+#     Quality). NO new concern, NO rung change; Contract-grade on the delta.
+#   v1.6 catalog & advanced capabilities: the full function catalog (CAP-FORMULA-FN extended) +
+#     CAP-FORMULA-VOLATILE / -REFVAL / -ARRAY (spill engine). ADDITIVE, same concerns, NO rung
+#     change; Contract-grade on the delta.
+#   v1.6 spill-surface delta: EVT-SPILL-CHANGE + EVT-AFTER-RECALC.spillChanged + LIB-FORMULA-SPILL
+#     (Interfaces), LAYER-SPILL-OUTLINE + spill edit-guard (UX/Domain INV-SPILL-PROJECTION), and
+#     AC-SPILL-EVENT/-OUTLINE/-GUARD (Quality) promoted ◻ → SPECCED. ADDITIVE, NO rung change;
+#     Contract-grade on the delta.
+#   v1.7 catalog completion: the remaining catalog gaps + CAP-FORMULA-INTERSECT (the `@` operator)
+#     + SUCCESS-FORMULA-INTERSECT + AC-CATALOG-V17/AC-FORMULA-INTERSECT. ADDITIVE, same concerns,
+#     NO rung change; Contract-grade on the delta. INFO scoped out of the catalog (wholly ABSENT);
+#     the ~30 architecturally-blocked functions are enumerated in the spec's Non-goals.
+# No tombstones and no staleness from any of these deltas (purely additive).
+
+# Enhancement lifecycle (Part 10d) — current state only; history lives in git.
+reference_granularity: entity
+tombstones:                       # retired IDs (never reused/renamed)
+  # v1.3 header subsystem (doc-feature): CAP-ROW-HEADER generalized into the unified header region.
+  # Was unbuilt (doc-only slice 16, 1 commit old) → clean supersession.
+  CAP-ROW-HEADER: { retired_in: doc-feature/header-subsystem, superseded_by: [CAP-HEADER] }
+  SUCCESS-ROW-HEADER: { retired_in: doc-feature/header-subsystem, superseded_by: [SUCCESS-HEADER] }
+  # v1.4 configurable context menus (doc-feature): CAP-HEADER-MENU generalized into the
+  # builder-driven CAP-MENU (cell + header/row/corner). Was unbuilt (doc-only slice 20) → clean supersession.
+  CAP-HEADER-MENU: { retired_in: doc-feature/menu-config, superseded_by: [CAP-MENU] }
+  SUCCESS-HEADER-MENU: { retired_in: doc-feature/menu-config, superseded_by: [SUCCESS-MENU] }
+staleness: {}                     # contract ID -> cause-attributed set of change-event ids
+  # v1.3 breaking selection reshape (CE-MULTI-RANGE-SELECT) reconciled at build (slice 17):
+  # selection.ts now realizes the disjoint range-set + line-select contract (CAP-SELECT /
+  # ENTITY-SELECTION), so their staleness entries are cleared (drift confirms code==doc).

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mini-grid — formula showcase (CAP-FORMULA)</title>
+    <style>
+      html, body { margin: 0; font-family: system-ui, sans-serif; }
+      header { padding: 8px 12px; border-bottom: 1px solid #ddd; font-size: 14px; }
+      #status { color: #555; }
+      .hint { color: #777; font-size: 12px; margin: 4px 12px; }
+      #app { position: relative; height: 360px; margin: 8px 12px; border: 1px solid #ddd; }
+      [data-mini-grid], [data-mini-grid] .mg-scroll { height: 100%; }
+      [data-mini-grid] .mg-header { height: 28px; }
+      .cheatsheet { margin: 8px 12px; font-size: 12px; color: #444; }
+      .cheatsheet code { background: #f3f3f3; padding: 1px 4px; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      mini-grid — <strong>formula showcase</strong> · <span id="status">loading…</span>
+    </header>
+    <p class="hint">
+      Double-click an editable cell (<strong>Units</strong>, <strong>Price</strong>) and type — the
+      formula columns recompute. Type a <code>=formula</code> into any cell to author your own.
+      Columns map to A1 as <code>A</code>=Category, <code>B</code>=Units, <code>C</code>=Price,
+      <code>D</code>=Revenue, <code>E</code>=Net, <code>F</code>=Rating.
+    </p>
+    <div id="app"></div>
+    <div class="cheatsheet">
+      Live formulas in this sheet:
+      <code>D = B*C</code> ·
+      <code>E = D - IF(D&gt;500, D*0.1, 0)</code> ·
+      <code>F = IF(E&gt;800,"★★★",IF(E&gt;400,"★★","★"))</code> ·
+      totals row: <code>=SUM(D1:D8)</code>, <code>=TEXT(AVERAGE(E1:E8),"0.00")</code>
+    </div>
+    <script type="module" src="./formula.js"></script>
+  </body>
+</html>

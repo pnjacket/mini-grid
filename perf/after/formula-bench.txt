@@ -1,0 +1,17 @@
+Benchmarking is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v2.1.9 /home/david/projects/mini-grid
+
+ ✓ packages/core/src/formula/formula.bench.ts > PERF-RECALC — dependency-graph recalculation 5021ms
+     name                                                                    hz      min      max     mean      p75      p99     p995     p999     rme  samples
+   · PERF-RECALC-FULL · full recalc of 100k formula cells                5.0315   185.80   211.30   198.75   204.38   211.30   211.30   211.30  ±2.66%       10   slowest
+   · PERF-RECALC-INCR · leaf edit (tiny subgraph)                    324,571.58   0.0028   0.4485   0.0031   0.0030   0.0061   0.0067   0.0124  ±0.61%   162286   fastest
+   · PERF-RECALC-INCR · head edit (cascade down the 20k-deep chain)     20.2900  45.6185  55.0297  49.2853  52.0716  55.0297  55.0297  55.0297  ±4.09%       11
+
+ BENCH  Summary
+
+  PERF-RECALC-INCR · leaf edit (tiny subgraph) - packages/core/src/formula/formula.bench.ts > PERF-RECALC — dependency-graph recalculation
+    15996.61x faster than PERF-RECALC-INCR · head edit (cascade down the 20k-deep chain)
+    64507.96x faster than PERF-RECALC-FULL · full recalc of 100k formula cells
+

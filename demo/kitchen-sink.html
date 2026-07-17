@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mini-grid — kitchen-sink</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --panel: #f7f8fa;
+        --border: #dfe3e8;
+        --ink: #1a1d21;
+        --muted: #5b6470;
+        --accent: #4263eb;
+        --accent-ink: #ffffff;
+        --ok: #2b8a3e;
+        --err: #c92a2a;
+        --link: #2f44b8;
+      }
+      body[data-theme='dark'] {
+        --bg: #16181d;
+        --panel: #1e2127;
+        --border: #333842;
+        --ink: #e8eaed;
+        --muted: #9aa4b2;
+        --accent: #5c7cfa;
+        --link: #91a7ff;
+        --ok: #51cf66;
+        --err: #ff6b6b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+      body {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        grid-template-columns: 320px 1fr;
+        grid-template-areas: 'head head' 'panel grid';
+        height: 100vh;
+      }
+      header {
+        grid-area: head;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+      }
+      header h1 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 700;
+      }
+      header .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      header a {
+        font-size: 12px;
+        color: var(--link);
+      }
+      .panel {
+        grid-area: panel;
+        overflow-y: auto;
+        border-right: 1px solid var(--border);
+        background: var(--panel);
+        padding: 10px 12px 40px;
+      }
+      .grid-wrap {
+        grid-area: grid;
+        position: relative;
+        overflow: hidden;
+      }
+      #grid {
+        position: absolute;
+        inset: 0;
+      }
+      [data-mini-grid] {
+        height: 100%;
+      }
+      [data-mini-grid] .mg-scroll {
+        height: 100%;
+      }
+      /* No fixed .mg-header height override — the multi-band header sizes itself
+         from header.columns.height (CAP-HEADER). */
+      .hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 4px 0 0;
+        line-height: 1.4;
+      }
+      section {
+        margin-bottom: 14px;
+      }
+      section > h2 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin: 0 0 6px;
+      }
+      .btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      button,
+      select {
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 9px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--ink);
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      #flags {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 8px;
+      }
+      .flag {
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--muted);
+      }
+      #log {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 6px;
+        background: var(--bg);
+      }
+      .log-row {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .log-ok {
+        color: var(--ok);
+      }
+      .log-error {
+        color: var(--err);
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <header>
+      <h1>mini-grid — kitchen sink</h1>
+      <span class="status">
+        <span id="status">loading…</span> · selection: <span id="selection">none</span>
+      </span>
+      <a href="./index.html">1M-row demo</a>
+      <a href="./i18n.html">i18n demo</a>
+      <a href="./header.html">header demo</a>
+      <a href="./menu.html">menu demo</a>
+    </header>
+
+    <aside class="panel" aria-label="Controls">
+      <section>
+        <h2>Data &amp; view</h2>
+        <div class="btns">
+          <button id="ctl-reload">Reload</button>
+          <button id="ctl-scroll">Scroll 50k</button>
+          <button id="ctl-select">Select range</button>
+        </div>
+        <p class="hint">
+          Ctrl/Cmd-click to add disjoint ranges; click a row-number gutter cell or a
+          column header to line-select. Right-click a cell or a column header for a
+          configurable menu.
+        </p>
+      </section>
+
+      <section>
+        <h2>Header &amp; columns</h2>
+        <div class="btns">
+          <button id="ctl-hide-col">Hide column</button>
+          <button id="ctl-show-all">Show all</button>
+          <button id="ctl-pin-col">Pin (leading)</button>
+          <button id="ctl-unpin-col">Unpin</button>
+          <button id="ctl-autofit">Autofit</button>
+          <button id="ctl-autofit-all">Autofit all</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Editing &amp; CRUD</h2>
+        <div class="btns">
+          <button id="ctl-edit">Edit cell</button>
+          <button id="ctl-edit-invalid">Invalid edit</button>
+          <button id="ctl-insert-row">+ Row</button>
+          <button id="ctl-remove-row">− Row</button>
+          <button id="ctl-insert-col">+ Col</button>
+          <button id="ctl-remove-col">− Col</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>History</h2>
+        <div class="btns">
+          <button id="ctl-undo">Undo</button>
+          <button id="ctl-redo">Redo</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Sort &amp; filter</h2>
+        <div class="btns">
+          <button id="ctl-sort-asc">Sort amount ↑</button>
+          <button id="ctl-sort-multi">Multi-sort</button>
+          <button id="ctl-sort-clear">Clear sort</button>
+          <button id="ctl-filter">Filter score&gt;50</button>
+          <button id="ctl-filter-clear">Clear filter</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Layout</h2>
+        <div class="btns">
+          <button id="ctl-resize">Resize</button>
+          <button id="ctl-reorder">Reorder</button>
+          <button id="ctl-freeze">Freeze</button>
+          <button id="ctl-merge">Merge</button>
+          <button id="ctl-unmerge">Unmerge</button>
+          <button id="ctl-group">Group</button>
+          <button id="ctl-collapse">Collapse</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Formatting</h2>
+        <div class="btns">
+          <button id="ctl-style-fill">Style range</button>
+          <button id="ctl-style-clear">Clear style</button>
+          <button id="ctl-cf-value">CF value</button>
+          <button id="ctl-cf-scale">CF scale</button>
+          <button id="ctl-cf-bar">CF bar</button>
+          <button id="ctl-cf-icon">CF icons</button>
+          <button id="ctl-cf-clear">CF clear</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Clipboard</h2>
+        <div class="btns">
+          <button id="ctl-copy">Copy</button>
+          <button id="ctl-paste">Paste</button>
+          <button id="ctl-fill">Fill down</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Export &amp; state</h2>
+        <div class="btns">
+          <button id="ctl-export-csv">Export CSV</button>
+          <button id="ctl-export-xlsx">Export xlsx</button>
+          <button id="ctl-state-save">Save layout</button>
+          <button id="ctl-state-restore">Restore layout</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Theme &amp; i18n</h2>
+        <div class="btns">
+          <button id="ctl-theme">Theme</button>
+          <button id="ctl-density">Density</button>
+          <button id="ctl-rtl">RTL</button>
+          <select id="ctl-locale" aria-label="Locale">
+            <option value="en-US">en-US</option>
+            <option value="de-DE">de-DE</option>
+            <option value="fr-FR">fr-FR</option>
+            <option value="ar-EG">ar-EG</option>
+          </select>
+        </div>
+      </section>
+
+      <section>
+        <h2>Feature flags</h2>
+        <div id="flags"></div>
+      </section>
+
+      <section>
+        <h2>Activity</h2>
+        <div id="log" role="log" aria-live="polite"></div>
+      </section>
+    </aside>
+
+    <main class="grid-wrap" aria-label="Grid"><div id="grid"></div></main>
+
+    <script type="module" src="./kitchen-sink.js"></script>
+  </body>
+</html>

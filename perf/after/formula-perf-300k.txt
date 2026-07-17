@@ -1,0 +1,11 @@
+serving /home/david/projects/mini-grid at http://127.0.0.1:41557/demo/formula-stress.html?rows=50000
+
+================ PERF-RECALC RESULTS ================
+  rows: 50,000  formula cells: 300,000
+  row generation:                 20.9 ms
+  setData (scan + first recalc):  1382.1 ms
+  PERF-RECALC-FULL (clean):       454.0 ms
+  PERF-RECALC-INCR head (cascade 50,000-deep): 114.4 ms
+  PERF-RECALC-INCR leaf (tiny):   17.10 ms
+  verify: B1=4  G1=8  G(last)=5687509
+====================================================

@@ -1,0 +1,42 @@
+{
+  "name": "mini-grid",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-agnostic TypeScript data-grid — pnpm monorepo.",
+  "license": "MIT",
+  "packageManager": "pnpm@11.3.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "pnpm -r build",
+    "e2e": "playwright test",
+    "docs:api": "typedoc",
+    "docs:check": "tsc -p docs/examples/tsconfig.json",
+    "license-scan": "license-checker --production --excludePrivatePackages --onlyAllow 'MIT;MIT OR X11;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD;Unlicense;CC0-1.0'",
+    "release": "changeset publish",
+    "version-packages": "changeset version"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@changesets/cli": "^2.27.9",
+    "@playwright/test": "^1.48.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitest/browser": "^2.1.0",
+    "jsdom": "^25.0.0",
+    "license-checker": "^25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "svelte": "^5.0.0",
+    "tsup": "^8.3.0",
+    "typedoc": "^0.28.19",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "vue": "^3.5.0"
+  }
+}

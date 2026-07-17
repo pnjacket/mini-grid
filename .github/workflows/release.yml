@@ -1,0 +1,55 @@
+# Release workflow — publishes @mini-grid/core + the three adapters in LOCKSTEP
+# via Changesets when a version tag (`v*`) is pushed. SET UP ONLY: it never runs
+# until such a tag exists and an `NPM_TOKEN` secret is configured. `changeset
+# publish` is a no-op without a token, so the job is safe to leave installed.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # npm provenance (optional)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Route the secret through env so the step-level guard can read it (the
+    # `secrets` context is not available in `if:`).
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build BEFORE unit tests — same ordering as ci.yml: security.static.test.ts
+      # scans the built dist bundle, so testing before building races the in-test
+      # rebuild across parallel vitest workers and fails intermittently.
+      - name: Verify (typecheck · build · unit)
+        run: |
+          pnpm typecheck
+          pnpm -r build
+          pnpm test
+
+      # Lockstep publish (config `fixed: [["@mini-grid/*"]]` bumps them together).
+      # Requires the NPM_TOKEN secret; absent ⇒ this step is skipped so the
+      # workflow stays installed-but-inert until a maintainer wires the token.
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: pnpm release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

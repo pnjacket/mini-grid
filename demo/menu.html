@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mini-grid — configurable menus (CAP-MENU)</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      header {
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+      }
+      #status {
+        color: #555;
+      }
+      #app {
+        position: relative;
+        height: calc(100vh - 42px);
+      }
+      [data-mini-grid] {
+        height: 100%;
+      }
+      [data-mini-grid] .mg-scroll {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      mini-grid configurable menus — <span id="status">loading…</span> ·
+      right-click a cell vs a column header for target-branched menus.
+    </header>
+    <div id="app"></div>
+    <script type="module" src="./menu.js"></script>
+  </body>
+</html>

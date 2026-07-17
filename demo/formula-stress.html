@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mini-grid — 300k chained formulas (PERF-RECALC)</title>
+    <style>
+      html, body { margin: 0; font-family: system-ui, sans-serif; }
+      header { padding: 8px 12px; border-bottom: 1px solid #ddd; font-size: 14px; }
+      #status { color: #555; }
+      #perf { margin: 8px 12px; font-size: 13px; }
+      #perf table { border-collapse: collapse; }
+      #perf td { padding: 2px 12px 2px 0; }
+      #perf td:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+      #app { position: relative; height: calc(100vh - 190px); margin: 8px 12px; border: 1px solid #ddd; }
+      [data-mini-grid], [data-mini-grid] .mg-scroll { height: 100%; }
+      [data-mini-grid] .mg-header { height: 28px; }
+      button { margin: 4px 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      mini-grid — <strong>300,000 chained formulas</strong> · <span id="status">building…</span>
+    </header>
+    <div id="perf"></div>
+    <button id="editHead">Edit head cell (cascade full chain)</button>
+    <button id="editLeaf">Edit leaf cell (tiny subgraph)</button>
+    <button id="recalc">Full recalc</button>
+    <div id="app"></div>
+    <script type="module" src="./formula-stress.js"></script>
+  </body>
+</html>

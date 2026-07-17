@@ -1,0 +1,11 @@
+serving /home/david/projects/mini-grid at http://127.0.0.1:40753/demo/formula-worst.html?rows=50000
+
+================ PERF-RECALC RESULTS ================
+  page: formula-worst.html   formula: COUNTIF (window 8)
+  rows: 50,000  formula cells: 300,000
+  row generation:                 54.1 ms
+  setData (scan + first recalc):  2992.4 ms
+  full recalc (clean):            1292.0 ms
+  head edit (cascade):            1366.3 ms
+  leaf edit (tiny subgraph):      16.80 ms
+====================================================

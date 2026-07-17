@@ -1,0 +1,10 @@
+
+================ PERF-RECALC RESULTS ================
+  page: formula-worst.html   formula: COUNTIF (window 8)
+  rows: 50,000  formula cells: 300,000
+  row generation:                 54.6 ms
+  setData (scan + first recalc):  2869.0 ms
+  full recalc (clean):            1183.8 ms
+  head edit (cascade):            1212.4 ms
+  leaf edit (tiny subgraph):      16.40 ms
+====================================================

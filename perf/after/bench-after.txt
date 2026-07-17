@@ -1,0 +1,133 @@
+Benchmarking is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v2.1.9 /home/david/projects/mini-grid
+
+ ✓ packages/core/src/formula/formula.bench.ts > PERF-RECALC — dependency-graph recalculation 5077ms
+     name                                                                    hz      min      max     mean      p75      p99     p995     p999     rme  samples
+   · PERF-RECALC-FULL · full recalc of 100k formula cells                4.9820   191.82   214.42   200.72   201.40   214.42   214.42   214.42  ±2.42%       10   slowest
+   · PERF-RECALC-INCR · leaf edit (tiny subgraph)                    330,370.73   0.0027   1.0045   0.0030   0.0029   0.0058   0.0064   0.0123  ±0.66%   165186   fastest
+   · PERF-RECALC-INCR · head edit (cascade down the 20k-deep chain)     19.9373  46.4383  54.3195  50.1571  52.2586  54.3195  54.3195  54.3195  ±3.11%       11
+stdout | packages/core/bench/index-engine.bench.ts:58:9
+mini-grid IndexEngine micro-benchmark
+
+stdout | packages/core/bench/index-engine.bench.ts:59:9
+=====================================
+
+stdout | packages/core/bench/index-engine.bench.ts:60:9
+rows:              1,000,000
+
+stdout | packages/core/bench/index-engine.bench.ts:61:9
+row generation:    157.6 ms
+
+stdout | packages/core/bench/index-engine.bench.ts:62:9
+load + index build: 330.2 ms   (SEQ-MOUNT data portion)
+
+stdout | packages/core/bench/index-engine.bench.ts:63:9
+sort 1M rows:      265.9 ms   (SEQ-SORT engine time)
+
+stdout | packages/core/bench/index-engine.bench.ts:64:9
+filter 1M rows:    159.2 ms   (SEQ-FILTER engine time)
+
+stdout | packages/core/bench/index-engine.bench.ts:65:9
+filtered rowCount: 499,999 / 1,000,000
+
+ ✓ packages/core/src/render/merge-lookup.bench.ts > PERF-FRAME-STEADY · per-cell merge resolution (P6) 1340ms
+     name                                                         hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P6) · O(merges) full scan per cell     116,724.92  0.0077  0.0821  0.0086  0.0083  0.0176  0.0184  0.0235  ±0.16%    58363
+   · production · row-filter once + column scan per cell  451,237.57  0.0019  0.9944  0.0022  0.0021  0.0045  0.0057  0.0241  ±0.64%   225619   fastest
+ ✓ packages/core/src/selection/selection-coalesce.bench.ts > SCALE-SELECT-COALESCE · getRanges on a single drag range (P14) 6572ms
+     name                                             hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P14) · full loop entry  13,198,864.47  0.0001  0.3066  0.0001  0.0001  0.0001  0.0001  0.0003  ±0.16%  6599433
+   · production · length<=1 short-circuit  14,352,628.25  0.0001  0.0341  0.0001  0.0001  0.0001  0.0001  0.0003  ±0.08%  7176315   fastest
+ ✓ packages/core/src/format/format-mask.bench.ts > PERF-CELL-PATH · formatValue over a formatted window (P1) 2833ms
+     name                                                     hz      min      max     mean      p75      p99     p995     p999     rme  samples
+   · production · currency:USD                            800.19   1.1921   3.1123   1.2497   1.2367   1.5466   1.6621   3.1123  ±0.90%      401
+   · production · number:2                                809.40   1.2053   1.4702   1.2355   1.2366   1.3998   1.4184   1.4702  ±0.24%      405   fastest
+   · production · date:medium                             419.50   2.3327   2.7775   2.3838   2.3818   2.6693   2.7599   2.7775  ±0.36%      210
+   · baseline (pre-P1) · new Intl.NumberFormat per call  17.2245  57.1304  60.3658  58.0568  58.5446  60.3658  60.3658  60.3658  ±1.18%       10   slowest
+ ✓ packages/core/src/engine/filter-context.bench.ts > SCALE-FILTER-CTX · buildFilteredIndex over N rows (P10) 1217ms
+     name                                                   hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P10) · allocate context per row    1,203.81  0.6275  2.9354  0.8307  0.7874  2.5176  2.6272  2.9354  ±3.72%      603
+   · production · no context for built-in predicates  1,227.09  0.6119  2.6803  0.8149  0.7793  2.4586  2.4988  2.6803  ±3.62%      614   fastest
+ ✓ packages/core/src/api/column-lookup.bench.ts > PERF-CELL-PATH · column defaultStyle lookup (P3) 1224ms
+     name                                          hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P3) · columns.find          292.55  3.2685  4.4940  3.4182  3.4434  3.9953  4.4940  4.4940  ±0.67%      147
+   · production · Map.get (store.getColumn)  2,264.69  0.4192  0.8336  0.4416  0.4416  0.5259  0.5686  0.6355  ±0.26%     1133   fastest
+ ✓ packages/core/src/format/color-interpolate.bench.ts > PERF-CELL-PATH · colorScale interpolate (P4) 1307ms
+     name                                                    hz      min      max     mean      p75      p99     p995     p999     rme  samples
+   · production · interpolate (cached parseHex)          102.67   9.4674  11.2477   9.7398   9.7748  11.2477  11.2477  11.2477  ±0.86%       52   fastest
+   · baseline (pre-P4) · interpolate w/ per-call parse  54.0710  18.0701  19.4311  18.4942  18.6369  19.4311  19.4311  19.4311  ±0.80%       28
+ ✓ packages/core/src/api/scroll-window.bench.ts > PERF-FRAME-STEADY · scroll window computation (P9) 1211ms
+     name                                                                hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P9) · row+col window computed TWICE per scroll  3,853.48  0.2455  0.6146  0.2595  0.2578  0.3977  0.4251  0.4951  ±0.40%     1927
+   · production · computed ONCE (threaded into refresh)            8,248.43  0.1170  0.2133  0.1212  0.1209  0.1414  0.1577  0.1965  ±0.15%     4125   fastest
+ ✓ packages/core/src/format/conditional.bench.ts > PERF-CELL-PATH · conditional evaluate over a cell window (P2) 613ms
+     name                              hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · evaluate — 9 rules × N cells  852.62  1.1051  1.6448  1.1729  1.1909  1.3917  1.4835  1.6448  ±0.47%      427
+ ✓ packages/core/src/engine/aggregate-topn.bench.ts > SCALE-AGG-TOPN · top-N over N values (P11) 1396ms
+     name                                             hz      min      max     mean      p75      p99     p995     p999     rme  samples
+   · baseline (pre-P11) · full sort + slice      28.1210  34.6824  37.0129  35.5606  36.1043  37.0129  37.0129  37.0129  ±1.23%       15
+   · production · bounded O(n·count) selection  1,637.68   0.4216   1.4338   0.6106   0.9907   1.0867   1.1004   1.4338  ±2.96%      820   fastest
+ ✓ packages/core/src/editing/apply-batch.bench.ts > SCALE-PASTE-APPLY · paste-block column resolution (P13) 1216ms
+     name                                                hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P13) · columns.find per write   3,496.65  0.2718  0.5490  0.2860  0.2851  0.3785  0.4394  0.5255  ±0.33%     1749
+   · production · Map built once + get per write  18,353.73  0.0529  0.3508  0.0545  0.0540  0.0663  0.0718  0.1121  ±0.23%     9177   fastest
+ ✓ packages/core/src/protocol/export-rows.bench.ts > PERF-FRAME-STEADY · MSG-EXPORT-ROWS reply (P12) 1246ms
+     name                                                        hz     min      max    mean     p75      p99     p995     p999     rme  samples
+   · baseline (pre-P12) · exportRows() + engine-host re-map  156.30  2.1994  18.3142  6.3979  7.0295  18.3142  18.3142  18.3142  ±9.61%       79
+   · production · exportRows() passed through                461.10  1.0768   7.6094  2.1687  3.8092   6.3383   6.3558   7.6094  ±8.78%      232   fastest
+ ✓ packages/core/src/api/group-outline.bench.ts > PERF-FRAME-STEADY · group outline per-frame render (P5) 1225ms
+     name                                               hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · baseline (pre-P5) · teardown + recreate all  2,522.52  0.3417  1.0716  0.3964  0.3778  0.7694  0.9013  1.0517  ±1.41%     1262
+   · production · reuse + reposition              9,050.52  0.1004  0.4355  0.1105  0.1058  0.2194  0.3405  0.4169  ±0.72%     4526   fastest
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/core/bench/index-engine.bench.ts [ packages/core/bench/index-engine.bench.ts ]
+Error: No test suite found in file /home/david/projects/mini-grid/packages/core/bench/index-engine.bench.ts
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ BENCH  Summary
+
+  production · Map.get (store.getColumn) - packages/core/src/api/column-lookup.bench.ts > PERF-CELL-PATH · column defaultStyle lookup (P3)
+    7.74x faster than baseline (pre-P3) · columns.find
+
+  production · reuse + reposition - packages/core/src/api/group-outline.bench.ts > PERF-FRAME-STEADY · group outline per-frame render (P5)
+    3.59x faster than baseline (pre-P5) · teardown + recreate all
+
+  production · computed ONCE (threaded into refresh) - packages/core/src/api/scroll-window.bench.ts > PERF-FRAME-STEADY · scroll window computation (P9)
+    2.14x faster than baseline (pre-P9) · row+col window computed TWICE per scroll
+
+  production · Map built once + get per write - packages/core/src/editing/apply-batch.bench.ts > SCALE-PASTE-APPLY · paste-block column resolution (P13)
+    5.25x faster than baseline (pre-P13) · columns.find per write
+
+  production · bounded O(n·count) selection - packages/core/src/engine/aggregate-topn.bench.ts > SCALE-AGG-TOPN · top-N over N values (P11)
+    58.24x faster than baseline (pre-P11) · full sort + slice
+
+  production · no context for built-in predicates - packages/core/src/engine/filter-context.bench.ts > SCALE-FILTER-CTX · buildFilteredIndex over N rows (P10)
+    1.02x faster than baseline (pre-P10) · allocate context per row
+
+  production · interpolate (cached parseHex) - packages/core/src/format/color-interpolate.bench.ts > PERF-CELL-PATH · colorScale interpolate (P4)
+    1.90x faster than baseline (pre-P4) · interpolate w/ per-call parse
+
+  evaluate — 9 rules × N cells - packages/core/src/format/conditional.bench.ts > PERF-CELL-PATH · conditional evaluate over a cell window (P2)
+
+  production · number:2 - packages/core/src/format/format-mask.bench.ts > PERF-CELL-PATH · formatValue over a formatted window (P1)
+    1.01x faster than production · currency:USD
+    1.93x faster than production · date:medium
+    46.99x faster than baseline (pre-P1) · new Intl.NumberFormat per call
+
+  PERF-RECALC-INCR · leaf edit (tiny subgraph) - packages/core/src/formula/formula.bench.ts > PERF-RECALC — dependency-graph recalculation
+    16570.45x faster than PERF-RECALC-INCR · head edit (cascade down the 20k-deep chain)
+    66312.99x faster than PERF-RECALC-FULL · full recalc of 100k formula cells
+
+  production · exportRows() passed through - packages/core/src/protocol/export-rows.bench.ts > PERF-FRAME-STEADY · MSG-EXPORT-ROWS reply (P12)
+    2.95x faster than baseline (pre-P12) · exportRows() + engine-host re-map
+
+  production · row-filter once + column scan per cell - packages/core/src/render/merge-lookup.bench.ts > PERF-FRAME-STEADY · per-cell merge resolution (P6)
+    3.87x faster than baseline (pre-P6) · O(merges) full scan per cell
+
+  production · length<=1 short-circuit - packages/core/src/selection/selection-coalesce.bench.ts > SCALE-SELECT-COALESCE · getRanges on a single drag range (P14)
+    1.09x faster than baseline (pre-P14) · full loop entry
+

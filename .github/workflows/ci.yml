@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Build BEFORE tests: several unit tests scan the built bundle
+      # (security.static.test.ts → dist/index.js) and other suites depend on the
+      # emitted dist. Running tests first forces an in-test rebuild that races the
+      # parallel vitest workers (clean:true wipes dist mid-run) → flaky failures.
+      # This matches the local dev order (`pnpm -r build && pnpm test`).
+      - name: Build
+        run: pnpm -r build
+
+      - name: Unit tests
+        run: pnpm test
+
+      # DECISION (2026-07-03): the E2E suite (Playwright + axe, `E2E-STANDARD`) and the
+      # perf harness are deliberately NOT run in CI. They need real Chromium (browser
+      # download + system deps on every run) and, for perf, the calibrated reference
+      # machine — too heavy for the available GitHub Actions minutes. They run
+      # **pre-merge on the reference machine** instead (`pnpm e2e`); Quality &
+      # Testing (`E2E-STANDARD`) records this. Revisit if CI resources grow.

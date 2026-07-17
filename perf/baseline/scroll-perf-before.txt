@@ -1,0 +1,20 @@
+serving /home/david/projects/mini-grid at http://127.0.0.1:42043/demo/index.html
+  scroll run 1: p50=16.70 p95=16.80ms  min/max=16.5/16.8  long(>33ms)=0  frames=139  maxNodes=560
+  scroll run 2: p50=16.70 p95=16.80ms  min/max=16.5/33.3  long(>33ms)=2  frames=139  maxNodes=560
+  scroll run 3: p50=16.70 p95=16.71ms  min/max=16.5/33.4  long(>33ms)=1  frames=139  maxNodes=560
+  scroll run 4: p50=16.70 p95=16.80ms  min/max=16.5/33.4  long(>33ms)=1  frames=139  maxNodes=560
+  scroll run 5: p50=16.70 p95=16.80ms  min/max=16.5/16.8  long(>33ms)=0  frames=139  maxNodes=560
+
+================ BROWSER PERF RESULTS ================
+PERF-MOUNT:
+  wall nav->first gridcell (median of 2): 3041 ms
+  mg:mount measure (empty-grid construct): 2.30 ms
+  demo split: rowgen=923ms  setData(load+firstpaint)=1772ms
+PERF-SCROLL:
+  per-run p95 (ms): [16.80, 16.80, 16.71, 16.80, 16.80]
+  MEDIAN of 5 p95: 16.80 ms
+  long-frame(>33ms) counts per run: [0, 2, 1, 1, 0]  median=1
+PERF-NODES:
+  max live [role=gridcell] DOM nodes during scroll: 560
+  max visible (display!=none) cells: 560
+=====================================================

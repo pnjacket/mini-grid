@@ -1,0 +1,87 @@
+# GitHub Pages workflow — builds the packages, the demo pages, and the TypeDoc API
+# reference, and deploys them to Pages.
+#
+# DECISION (2026-07-03): trigger is **manual-only** (`workflow_dispatch`). This repo
+# is PRIVATE, and GitHub Pages on a private repo requires GitHub Pro / a paid plan —
+# so an automatic push-triggered deploy fails at the deploy step every time. mini-grid
+# will be made **public** once it is polished enough; until then Pages stays off and
+# this workflow is not auto-run. When the repo goes public (or Pro is added): enable
+# Pages (Settings → Pages → Source: "GitHub Actions") and, if desired, restore the
+# `push: branches: [main]` trigger below for continuous deploys.
+name: Deploy Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; a newer push supersedes an in-progress run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The demo pages load the built ESM from packages/*/dist, so build first.
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Build API reference
+        run: pnpm docs:api
+
+      # Assemble the static site: the demo pages at the root (so kitchen-sink.html
+      # loads ../packages/core/dist/index.js) + the API reference under /api.
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r demo _site/demo
+          cp -r packages _site/packages
+          cp -r docs/api _site/api
+          # A landing page that links the showcase + API docs.
+          cat > _site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>mini-grid</title>
+          <h1>mini-grid</h1>
+          <ul>
+            <li><a href="./demo/kitchen-sink.html">Kitchen-sink demo</a></li>
+            <li><a href="./demo/index.html">1M-row demo</a></li>
+            <li><a href="./demo/i18n.html">i18n + RTL demo</a></li>
+            <li><a href="./demo/header.html">Header region demo</a></li>
+            <li><a href="./demo/menu.html">Configurable menus demo</a></li>
+            <li><a href="./api/index.html">API reference</a></li>
+          </ul>
+          HTML
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

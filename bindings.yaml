@@ -1,0 +1,1374 @@
+# bindings.yaml — Dictum contract->code binding map (STANDARD Part 10d).
+# CURRENT doc<->code correspondence only; populated as each slice is built.
+# Self-validated by the drift-detector every run. History rides on git.
+# Shape per dictum/templates/binding-map.template.md (map keyed by contract ID).
+# Kinds bound: ENTITY / COMPONENT / LIB / EVT / MSG / DOM / SCREEN / INV(asserted_by).
+# CAP-* (transitive), PATTERN-*/ADR-* (behavioral), PERF-* budget targets (PERF-SCROLL/-SORT/… — own
+# perf-tier gate)/POLICY-*/LICENSE-*/LEGAL-* are NOT bound. Exception: the v1.1 hot-path guard
+# contracts (PERF-CELL-PATH/PERF-FRAME-STEADY/SCALE-*) ARE bound — structural/behavioral regression
+# guards backed by *.bench.ts + a behavior assertion (stubbed build-new below until their slices land).
+
+bindings:
+
+  # --- Entities (Domain) ---
+  ENTITY-SHEET:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+  ENTITY-COLUMN:                # v1.3 CAP-COLUMN-MANAGE (slice 19) — additive `hidden?`/`pinned?` view-projection fields
+    locators:
+      - { path: packages/core/src/api/options.ts, symbol: ColumnDef }
+      - { path: packages/core/src/store/store.ts, symbol: getVisibleColumns }
+  ENTITY-ROW:
+    locators: [{ path: packages/core/src/engine/index-engine.ts, symbol: IndexEngine }]
+  ENTITY-CELL:
+    locators: [{ path: packages/core/src/util/path.ts, symbol: getByPath }]
+  ENTITY-RANGE:
+    locators: [{ path: packages/core/src/types.ts, symbol: Range }]
+  ENTITY-SELECTION:            # v1.3 CE-MULTI-RANGE-SELECT (slice 17) — reshaped to a disjoint range-set + line selections
+    locators:
+      - { path: packages/core/src/selection/selection.ts, symbol: SelectionModel }
+      - { path: packages/core/src/selection/selection.ts, symbol: Selection }
+      - { path: packages/core/src/selection/selection.ts, symbol: LineSelection }
+    asserted_by:
+      - { path: packages/core/src/selection/selection.test.ts, symbol: "SelectionModel (ENTITY-SELECTION)",
+          run: "pnpm vitest run packages/core/src/selection/selection.test.ts" }
+  ENTITY-DATA-SOURCE:
+    locators: [{ path: packages/core/src/engine/index-engine.ts, symbol: IndexEngine }]
+
+  # --- Components (Architecture) ---
+  COMPONENT-DATA-WORKER:
+    locators:
+      - { path: packages/core/src/engine/index-engine.ts, symbol: IndexEngine }
+      - { path: packages/core/src/protocol/engine-host.ts, symbol: EngineHost }
+      - { path: packages/core/src/protocol/data-client.ts, symbol: DataClient }
+  COMPONENT-STORE:
+    locators: [{ path: packages/core/src/store/store.ts, symbol: ReactiveStore }]
+  COMPONENT-VIEWPORT:
+    locators:
+      - { path: packages/core/src/viewport/viewport.ts, symbol: Viewport }
+      - { path: packages/core/src/viewport/height-index.ts, symbol: HeightIndex }
+  COMPONENT-RENDER:
+    locators: [{ path: packages/core/src/render/renderer.ts, symbol: GridRenderer }]
+  COMPONENT-API:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+  COMPONENT-INTERACTION:
+    locators:
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+      - { path: packages/core/src/interaction/keymap.ts, symbol: computeMove }
+      - { path: packages/core/src/selection/selection.ts, symbol: SelectionModel }
+    asserted_by:
+      - { path: packages/core/src/interaction/interaction.test.ts, symbol: COMPONENT-INTERACTION,
+          run: "pnpm vitest run packages/core/src/interaction/interaction.test.ts" }
+
+  # --- Library API (Interfaces) ---
+  LIB-CREATE:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+  LIB-OPTIONS:                 # v1.3 CAP-HEADER (slice 18) — header?: HeaderConfig (flat rowHeader* removed)
+    locators:
+      - { path: packages/core/src/api/options.ts, symbol: GridOptions }
+      - { path: packages/core/src/types.ts, symbol: HeaderConfig }
+      - { path: packages/core/src/worksheet/header-config.ts, symbol: resolveHeaderConfig }
+    asserted_by:
+      - { path: packages/core/src/worksheet/header.test.ts, symbol: AC-HEADER-CONFIG,
+          run: "pnpm vitest run packages/core/src/worksheet/header.test.ts -t 'AC-HEADER-CONFIG'" }
+  LIB-COLUMN-DEF:              # v1.3 CAP-HEADER — headerRender?/headerTooltip?
+    locators:
+      - { path: packages/core/src/api/options.ts, symbol: ColumnDef }
+      - { path: packages/core/src/types.ts, symbol: HeaderRenderer }
+    asserted_by:
+      - { path: packages/core/src/worksheet/header.test.ts, symbol: "headerTooltip",
+          run: "pnpm vitest run packages/core/src/worksheet/header.test.ts -t 'tooltips'" }
+  LIB-SELECTION:               # v1.3 CE-MULTI-RANGE-SELECT (slice 17) — addRange/selectRow(s)/selectColumn(s)/selectAll/clearSelection
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+      - { path: packages/core/src/selection/selection.ts, symbol: SelectionModel }
+    asserted_by:
+      - { path: packages/core/src/interaction/interaction.test.ts, symbol: LIB-SELECTION,
+          run: "pnpm vitest run packages/core/src/interaction/interaction.test.ts -t 'LIB-SELECTION'" }
+      - { path: packages/core/src/interaction/interaction.test.ts, symbol: AC-SELECTION-SET,
+          run: "pnpm vitest run packages/core/src/interaction/interaction.test.ts -t 'AC-SELECTION-SET'" }
+      - { path: packages/core/src/selection/selection.test.ts, symbol: "LIB-SELECTION additions (v1.3)",
+          run: "pnpm vitest run packages/core/src/selection/selection.test.ts -t 'LIB-SELECTION additions'" }
+      - { path: e2e/grid.spec.ts, symbol: AC-SELECTION-SET,
+          run: "pnpm exec playwright test e2e/grid.spec.ts -g 'multi-range|column-header|select-all'" }
+  LIB-SCROLL:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+
+  # --- Worker message protocol (Interfaces MSG-*) ---
+  MSG-LOAD:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgLoad }]
+  MSG-QUERY-WINDOW:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgQueryWindow }]
+  MSG-WINDOW:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgWindow }]
+  MSG-INDEX-SUMMARY:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgIndexSummary }]
+  MSG-SORT:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgSort }]
+  MSG-FILTER:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgFilter }]
+  MSG-ERROR:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgError }]
+
+  # --- Event surface (Interfaces EVT-*) — the bus + the two Slice-2 events ---
+  EVT-ERROR:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+    asserted_by:
+      - { path: packages/core/src/api/crosscutting.test.ts, symbol: AC-ERR-TYPE,
+          run: "pnpm vitest run packages/core/src/api/crosscutting.test.ts -t 'AC-ERR-TYPE'" }
+  EVT-STATE-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/store/store.ts, symbol: ReactiveStore }
+    asserted_by:
+      - { path: packages/core/src/api/crosscutting.test.ts, symbol: EVT-STATE-CHANGE,
+          run: "pnpm vitest run packages/core/src/api/crosscutting.test.ts -t 'EVT-STATE-CHANGE'" }
+  EVT-SELECTION-CHANGE:        # v1.3 CE-MULTI-RANGE-SELECT — payload now carries the full range-set
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+    asserted_by:
+      - { path: packages/core/src/interaction/interaction.test.ts, symbol: EVT-SELECTION-CHANGE,
+          run: "pnpm vitest run packages/core/src/interaction/interaction.test.ts -t 'EVT-SELECTION-CHANGE'" }
+  EVT-SCROLL:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+  EVT-VIEWPORT-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+
+  # --- DOM entrypoint layer + input bindings (Interfaces DOM-*/BIND-*) ---
+  DOM-ROOT:
+    locators: [{ path: packages/core/src/render/renderer.ts, symbol: GridRenderer }]
+  DOM-CELL:
+    # role=gridcell + data-row-key/-col-id + aria-rowindex/-colindex + aria-selected
+    # + aria-readonly + roving tabindex (renderer paints, interaction decorates).
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer }
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+  DOM-HEADER:               # extended v1.3 (slice 18) — N bands (role=row, data-band), aria-colspan/rowspan spans, sort-vs-line-select dual-fire
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer }
+      - { path: packages/core/src/worksheet/header-config.ts, symbol: resolveHeaderConfig }
+      - { path: packages/core/src/worksheet/header-controller.ts, symbol: HeaderController }
+    asserted_by:
+      - { path: packages/core/src/worksheet/header.test.ts, symbol: "column-header bands + spans",
+          run: "pnpm vitest run packages/core/src/worksheet/header.test.ts -t 'column-header bands'" }
+      - { path: packages/core/src/worksheet/header.test.ts, symbol: "dual-fire split",
+          run: "pnpm vitest run packages/core/src/worksheet/header.test.ts -t 'dual-fire'" }
+      - { path: e2e/header.spec.ts, symbol: JOURNEY-HEADER,
+          run: "pnpm exec playwright test e2e/header.spec.ts -g 'multi-band|dual-fire'" }
+  DOM-ROWHEADER:            # v1.3 CE-HEADER (slice 18) — role=rowheader frozen gutter (M bands), realizes CAP-HEADER (was CAP-ROW-HEADER, retired)
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer }
+      - { path: packages/core/src/worksheet/header-config.ts, symbol: RowHeaderPlan }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+    asserted_by:
+      - { path: packages/core/src/worksheet/header.test.ts, symbol: "row-header gutter (DOM-ROWHEADER)",
+          run: "pnpm vitest run packages/core/src/worksheet/header.test.ts -t 'row-header gutter'" }
+      - { path: e2e/header.spec.ts, symbol: "row-header gutter frozen",
+          run: "pnpm exec playwright test e2e/header.spec.ts -g 'row-header gutter'" }
+
+  # --- v1.3 header subsystem (CE-HEADER / CE-COLUMN-MANAGE / CE-HEADER-MENU / CE-MULTI-RANGE-SELECT) ---
+  # DOM-HEADER / DOM-ROWHEADER / DOM-CORNER + LIB-OPTIONS / LIB-COLUMN-DEF BUILT in slice 18;
+  # DOM-HEADER-MENU / LAYER-HEADER-MENU BUILT in slice 20 (under CAP-MENU).
+  # LIB-COLUMN-MANAGE + EVT-COLUMN-HIDDEN/-PINNED/-AUTOFIT + INV-COLUMN-HIDDEN-EXCLUDED/-PIN-LEADING BUILT in slice 19.
+  DOM-CORNER:               # slice 18 — corner select-all + developer-customizable content
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer }
+      - { path: packages/core/src/worksheet/header-controller.ts, symbol: HeaderController }
+    asserted_by:
+      - { path: packages/core/src/worksheet/header.test.ts, symbol: "corner select-all (DOM-CORNER)",
+          run: "pnpm vitest run packages/core/src/worksheet/header.test.ts -t 'corner select-all'" }
+      - { path: e2e/header.spec.ts, symbol: "corner click selects the whole sheet",
+          run: "pnpm exec playwright test e2e/header.spec.ts -g 'corner click'" }
+  DOM-HEADER-MENU:          # slice 20 — dedicated header menu surface (role=menu), builder-driven (v1.4 CAP-MENU)
+    locators:
+      - { path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController }
+      - { path: packages/core/src/api/grid.ts, symbol: menuTargetFromNode }
+    asserted_by:
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "AC-MENU-CONFIG",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts" }
+      - { path: e2e/menu.spec.ts, symbol: "right-click a cell vs a column-header",
+          run: "pnpm exec playwright test e2e/menu.spec.ts -g 'different menus'" }
+  LIB-COLUMN-MANAGE:        # slice 19 — hideColumn/showColumn/pinColumn/autofitColumn/autofitAllColumns
+    locators:
+      - { path: packages/core/src/worksheet/column-manage.ts, symbol: ColumnManageController }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+      - { path: packages/core/src/render/renderer.ts, symbol: measureColumnContentWidth }
+      - { path: packages/core/src/worksheet/header-controller.ts, symbol: handleDblClick }
+    asserted_by:
+      - { path: packages/core/src/worksheet/column-manage.test.ts, symbol: "LIB-COLUMN-MANAGE",
+          run: "pnpm vitest run packages/core/src/worksheet/column-manage.test.ts" }
+      - { path: e2e/header.spec.ts, symbol: "hide/pin/autofit + fit-all",
+          run: "pnpm exec playwright test e2e/header.spec.ts -g 'hide a column|pin a column|autofits|fit-all'" }
+  LAYER-HEADER-MENU:        # slice 20 — dedicated header menu (UX layer); builder-driven (v1.4 CAP-MENU)
+    locators:
+      - { path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController }
+      - { path: packages/core/src/interaction/menu.ts, symbol: defaultMenuBuilder }
+      - { path: packages/core/src/api/grid.ts, symbol: resolveMenu }
+    asserted_by:
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "default builder branches: a column-header menu shows the header built-ins",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts -t 'header built-ins'" }
+      - { path: e2e/menu.spec.ts, symbol: "AC-MENU-A11Y header submenu",
+          run: "pnpm exec playwright test e2e/menu.spec.ts -g 'header submenu'" }
+  EVT-COLUMN-HIDDEN:        # slice 19 — fired by hideColumn/showColumn
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: columnHidden }
+      - { path: packages/core/src/worksheet/column-manage.ts, symbol: hideColumn }
+    asserted_by:
+      - { path: packages/core/src/worksheet/column-manage.test.ts, symbol: "EVT-COLUMN-HIDDEN",
+          run: "pnpm vitest run packages/core/src/worksheet/column-manage.test.ts -t 'EVT-COLUMN-HIDDEN'" }
+  EVT-COLUMN-PINNED:        # slice 19 — fired by pinColumn
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: columnPinned }
+      - { path: packages/core/src/worksheet/column-manage.ts, symbol: pinColumn }
+    asserted_by:
+      - { path: packages/core/src/worksheet/column-manage.test.ts, symbol: "EVT-COLUMN-PINNED",
+          run: "pnpm vitest run packages/core/src/worksheet/column-manage.test.ts -t 'EVT-COLUMN-PINNED'" }
+  EVT-COLUMN-AUTOFIT:       # slice 19 — fired by autofitColumn/autofitAllColumns
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: columnAutofit }
+      - { path: packages/core/src/worksheet/column-manage.ts, symbol: autofitColumn }
+    asserted_by:
+      - { path: packages/core/src/worksheet/column-manage.test.ts, symbol: "columnAutofit",
+          run: "pnpm vitest run packages/core/src/worksheet/column-manage.test.ts -t 'autofit'" }
+  INV-COLUMN-HIDDEN-EXCLUDED:   # slice 19 — hidden columns excluded from the visible projection/index; def+data retained
+    locators:
+      - { path: packages/core/src/store/store.ts, symbol: getVisibleColumns }
+      - { path: packages/core/src/api/grid.ts, symbol: computeHiddenCols }
+    asserted_by:
+      - { path: packages/core/src/store/store.test.ts, symbol: INV-COLUMN-HIDDEN-EXCLUDED,
+          run: "pnpm vitest run packages/core/src/store/store.test.ts -t 'INV-COLUMN-HIDDEN-EXCLUDED'" }
+      - { path: packages/core/src/worksheet/column-manage.test.ts, symbol: INV-COLUMN-HIDDEN-EXCLUDED,
+          run: "pnpm vitest run packages/core/src/worksheet/column-manage.test.ts -t 'INV-COLUMN-HIDDEN-EXCLUDED'" }
+  INV-COLUMN-PIN-LEADING:       # slice 19 — pinned columns form a leading contiguous block (RTL-aware; composes with freeze)
+    locators:
+      - { path: packages/core/src/store/store.ts, symbol: getVisibleColumns }
+      - { path: packages/core/src/api/grid.ts, symbol: reflowPinnedOrder }
+      - { path: packages/core/src/api/grid.ts, symbol: frozenColExtent }
+    asserted_by:
+      - { path: packages/core/src/store/store.test.ts, symbol: INV-COLUMN-PIN-LEADING,
+          run: "pnpm vitest run packages/core/src/store/store.test.ts -t 'INV-COLUMN-PIN-LEADING'" }
+      - { path: packages/core/src/worksheet/column-manage.test.ts, symbol: INV-COLUMN-PIN-LEADING,
+          run: "pnpm vitest run packages/core/src/worksheet/column-manage.test.ts -t 'INV-COLUMN-PIN-LEADING'" }
+
+  # --- v1.4 configurable context menus (CE-MENU-CONFIG / CE-HEADER-MENU-RETIRE) ---
+  # Builder-driven menus for cell + header/row/corner — BUILT in slice 20 (CAP-MENU).
+  # DOM-HEADER-MENU / LAYER-HEADER-MENU above are repointed under CAP-MENU. The cell
+  # LAYER-CONTEXT-MENU stays changed-but-bound (ContextMenuController, existing locators, below).
+  # MenuBuilder/MenuContext/MenuItem/builtinItems/BuiltinCommandId realize under LIB-MENU.
+  # CAP-HEADER-MENU retired -> CAP-MENU (manifest tombstone). CAP-* stay transitive.
+  LIB-MENU:                 # slice 20 — openMenu/closeMenu + GridOptions.menu MenuBuilder + builtinItems registry + BuiltinCommandId catalog + Menu* types
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: openMenu }
+      - { path: packages/core/src/api/grid.ts, symbol: resolveMenu }
+      - { path: packages/core/src/api/grid.ts, symbol: runMenuCommand }
+      - { path: packages/core/src/interaction/menu.ts, symbol: builtinItems }
+      - { path: packages/core/src/interaction/menu.ts, symbol: BUILTIN_COMMAND_IDS }
+      - { path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController }
+      - { path: packages/core/src/types.ts, symbol: MenuBuilder }
+    asserted_by:
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "AC-MENU-CONFIG",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts" }
+      - { path: e2e/menu.spec.ts, symbol: "programmatic openMenu opens the menu",
+          run: "pnpm exec playwright test e2e/menu.spec.ts -g 'programmatic openMenu'" }
+  SEC-MENU-CUSTOM-RENDER:   # slice 20 — custom menu-item render() Node mounted as-is (developer-trust boundary; NOT auto-escaped; contrast SEC-RENDERER-DOM-ONLY)
+    locators:
+      - { path: packages/core/src/interaction/context-menu.ts, symbol: renderLevel }
+      - { path: packages/core/src/api/grid.ts, symbol: toRenderItem }
+    asserted_by:
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "SEC-MENU-CUSTOM-RENDER: a custom item render Node is mounted AS-IS",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts -t 'mounted AS-IS'" }
+      - { path: e2e/menu.spec.ts, symbol: "custom item mounted as-is",
+          run: "pnpm exec playwright test e2e/menu.spec.ts -g 'different menus'" }
+  EVT-MENU-OPEN:            # slice 20 — notify event on context-menu open (cell/header/row/corner)
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: menuOpen }
+      - { path: packages/core/src/api/grid.ts, symbol: resolveMenu }
+    asserted_by:
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "EVT-MENU-OPEN fires with the target + resolved items + position",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts -t 'EVT-MENU-OPEN'" }
+  BIND-KEYS:
+    locators:
+      - { path: packages/core/src/interaction/keymap.ts, symbol: DEFAULT_KEY_MAP }
+      - { path: packages/core/src/interaction/keymap.ts, symbol: computeMove }
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+    asserted_by:
+      - { path: packages/core/src/interaction/keymap.test.ts, symbol: BIND-KEYS,
+          run: "pnpm vitest run packages/core/src/interaction/keymap.test.ts" }
+      - { path: e2e/grid.spec.ts, symbol: BIND-KEYS,
+          run: "pnpm e2e -g 'keyboard nav'" }
+  BIND-POINTER:
+    locators: [{ path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }]
+    asserted_by:
+      - { path: e2e/grid.spec.ts, symbol: BIND-POINTER,
+          run: "pnpm e2e -g 'pointer select'" }
+
+  # --- UI surface + accessibility (UX SCREEN-*, A11y A11Y-*) ---
+  SCREEN-GRID:
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer }
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+  A11Y-GRID:
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer }
+      - { path: packages/core/src/interaction/interaction.ts, symbol: InteractionController }
+      # Slice 11a: the accessible-announcement contract (live region) + aria-busy.
+      - { path: packages/core/src/a11y/announcer.ts, symbol: Announcer }
+      - { path: packages/core/src/render/renderer.ts, symbol: "GridRenderer.setBusy" }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }  # announcer wiring (afterSort/-Filter/-Insert/-Delete/validationError → announce) + beginBusy/endBusy
+    asserted_by:
+      - { path: e2e/grid.spec.ts, symbol: AC-AXE,
+          run: "pnpm e2e -g 'axe-core'" }
+      - { path: packages/core/src/interaction/interaction.test.ts, symbol: A11Y-GRID,
+          run: "pnpm vitest run packages/core/src/interaction/interaction.test.ts -t 'A11Y-GRID'" }
+      # Slice 11a: announcement contract (politeness, coalescing, exclusions) + aria-busy.
+      - { path: packages/core/src/a11y/announcer.test.ts, symbol: "A11Y-GRID Announcer",
+          run: "pnpm vitest run packages/core/src/a11y/announcer.test.ts" }
+      - { path: packages/core/src/a11y/announce-integration.test.ts, symbol: "A11Y-GRID announcement wiring",
+          run: "pnpm vitest run packages/core/src/a11y/announce-integration.test.ts" }
+      - { path: e2e/a11y.spec.ts, symbol: AC-ANNOUNCE,
+          run: "pnpm exec playwright test e2e/a11y.spec.ts -g 'AC-ANNOUNCE'" }
+      - { path: e2e/a11y.spec.ts, symbol: AC-FORCED-COLORS,
+          run: "pnpm exec playwright test e2e/a11y.spec.ts -g 'forced-colors'" }
+
+  # --- Invariants (Domain) — enforcement site + asserting test ---
+  INV-COLKEY-UNIQUE:
+    locators: [{ path: packages/core/src/store/store.ts, symbol: ReactiveStore }]
+    asserted_by:
+      - { path: packages/core/src/api/invariants.test.ts, symbol: INV-COLKEY-UNIQUE,
+          run: "pnpm vitest run packages/core/src/api/invariants.test.ts -t 'INV-COLKEY-UNIQUE'" }
+  INV-ROWKEY-UNIQUE:
+    locators: [{ path: packages/core/src/engine/index-engine.ts, symbol: IndexEngine }]
+    asserted_by:
+      - { path: packages/core/src/api/invariants.test.ts, symbol: INV-ROWKEY-UNIQUE,
+          run: "pnpm vitest run packages/core/src/api/invariants.test.ts -t 'INV-ROWKEY-UNIQUE'" }
+  INV-CELL-DERIVED:
+    locators: [{ path: packages/core/src/engine/index-engine.ts, symbol: IndexEngine }]
+    asserted_by:
+      - { path: packages/core/src/engine/index-engine.test.ts, symbol: INV-CELL-DERIVED,
+          run: "pnpm vitest run packages/core/src/engine/index-engine.test.ts -t 'INV-CELL-DERIVED'" }
+  INV-SELECTION-ACTIVE:
+    locators: [{ path: packages/core/src/selection/selection.ts, symbol: SelectionModel }]
+    asserted_by:
+      - { path: packages/core/src/selection/selection.test.ts, symbol: INV-SELECTION-ACTIVE,
+          run: "pnpm vitest run packages/core/src/selection/selection.test.ts -t 'INV-SELECTION-ACTIVE'" }
+  # v1.3 CE-MULTI-RANGE-SELECT (slice 17) — the reshaped disjoint range-set model.
+  INV-SELECTION-WELLFORMED:
+    locators:
+      - { path: packages/core/src/selection/selection.ts, symbol: SelectionModel }
+      - { path: packages/core/src/selection/selection.ts, symbol: selectionWellFormed }
+    asserted_by:
+      - { path: packages/core/src/selection/selection.test.ts, symbol: INV-SELECTION-WELLFORMED,
+          run: "pnpm vitest run packages/core/src/selection/selection.test.ts -t 'INV-SELECTION-WELLFORMED'" }
+  INV-SELECTION-LINE:
+    locators:
+      - { path: packages/core/src/selection/selection.ts, symbol: SelectionModel }
+    asserted_by:
+      - { path: packages/core/src/selection/selection.test.ts, symbol: INV-SELECTION-LINE,
+          run: "pnpm vitest run packages/core/src/selection/selection.test.ts -t 'INV-SELECTION-LINE'" }
+
+  # --- Slice 4: editing + validation + undo/redo + row/col CRUD + context menu ---
+  ENTITY-EDIT-SESSION:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditSession }]
+  ENTITY-HISTORY:
+    locators: [{ path: packages/core/src/editing/history.ts, symbol: History }]
+  ENTITY-HISTORY-ENTRY:
+    locators: [{ path: packages/core/src/editing/history.ts, symbol: Command }]
+  COMPONENT-EDIT:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+  COMPONENT-HISTORY:
+    locators: [{ path: packages/core/src/editing/history.ts, symbol: History }]
+  LIB-UPDATE-CELL:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+  LIB-EDIT-CONTROL:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+  LIB-UNDO:
+    locators: [{ path: packages/core/src/editing/history.ts, symbol: History }]
+  LIB-REDO:
+    locators: [{ path: packages/core/src/editing/history.ts, symbol: History }]
+  LIB-EDITOR-API:
+    locators: [{ path: packages/core/src/editing/editors.ts, symbol: CellEditor }]
+  LIB-VALIDATOR-API:
+    locators: [{ path: packages/core/src/editing/validation.ts, symbol: compileValidation }]
+  LIB-INSERT-ROWS:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+  LIB-REMOVE-ROWS:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+  LIB-COLUMN-CRUD:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: createGrid }]
+  LIB-GET-CHANGES:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: ChangeTracker }]
+  MSG-APPLY-EDIT:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgApplyEdit }]
+  MSG-INSERT:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgInsertRows }]
+  MSG-REMOVE:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgRemoveRows }]
+  MSG-INSERT-COL:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgInsertCol }]
+  MSG-REMOVE-COL:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgRemoveCol }]
+  LAYER-EDITOR:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+  LAYER-VALIDATION-TIP:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+  LAYER-CONTEXT-MENU:       # v1.4 CE-MENU-CONFIG — cell menu is now builder-driven (CAP-MENU); default builder ships today's items (no regression)
+    locators:
+      - { path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController }
+      - { path: packages/core/src/interaction/menu.ts, symbol: defaultMenuBuilder }
+      - { path: packages/core/src/api/grid.ts, symbol: resolveMenu }
+    asserted_by:
+      - { path: packages/core/src/interaction/context-menu.test.ts, symbol: "LAYER-CONTEXT-MENU (jsdom)",
+          run: "pnpm vitest run packages/core/src/interaction/context-menu.test.ts" }
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "AC-MENU-CONFIG",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts" }
+      - { path: e2e/crud.spec.ts, symbol: "JOURNEY-CRUD context menu (regression guard)",
+          run: "pnpm exec playwright test e2e/crud.spec.ts" }
+  A11Y-EDITOR:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+    asserted_by:
+      # aria-invalid/-describedby + Esc-restores-focus (re-asserted Slice 11a).
+      - { path: packages/core/src/editing/edit-session.test.ts, symbol: "EVT-VALIDATION-ERROR",
+          run: "pnpm vitest run packages/core/src/editing/edit-session.test.ts -t 'validation reject'" }
+      - { path: e2e/a11y.spec.ts, symbol: AC-FOCUS-RESTORE,
+          run: "pnpm exec playwright test e2e/a11y.spec.ts -g 'AC-FOCUS-RESTORE'" }
+      - { path: e2e/edit.spec.ts, symbol: A11Y-EDITOR,
+          run: "pnpm exec playwright test e2e/edit.spec.ts -g 'axe'" }
+  A11Y-CONTEXT-MENU:        # v1.4 rich items — menuitem/menuitemcheckbox/menuitemradio/aria-haspopup, Space toggle, submenu nav
+    locators: [{ path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController }]
+    asserted_by:
+      # role=menu, Shift+F10 keyboard-open, Esc closes + restores cell focus, axe.
+      - { path: e2e/crud.spec.ts, symbol: A11Y-CONTEXT-MENU,
+          run: "pnpm exec playwright test e2e/crud.spec.ts -g 'Shift\\+F10'" }
+      - { path: packages/core/src/interaction/menu.test.ts, symbol: "submenu / toggle / radio render with their ARIA roles",
+          run: "pnpm vitest run packages/core/src/interaction/menu.test.ts -t 'ARIA roles'" }
+      - { path: e2e/menu.spec.ts, symbol: "AC-MENU-A11Y",
+          run: "pnpm exec playwright test e2e/menu.spec.ts -g 'AC-MENU-A11Y'" }
+  A11Y-HEADER-MENU:         # v1.4 — the dedicated header menu carries the same rich-item roles + keyboard/focus/Esc-restore
+    locators: [{ path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController }]
+    asserted_by:
+      - { path: e2e/menu.spec.ts, symbol: "AC-MENU-A11Y header submenu (menuitemradio)",
+          run: "pnpm exec playwright test e2e/menu.spec.ts -g 'header submenu'" }
+  DOM-EDITOR:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+  INV-EDIT-SINGLE:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: EditController }]
+    asserted_by:
+      - { path: packages/core/src/editing/edit-session.test.ts, symbol: INV-EDIT-SINGLE,
+          run: "pnpm vitest run packages/core/src/editing/edit-session.test.ts -t 'INV-EDIT-SINGLE'" }
+  INV-HISTORY-LINEAR:
+    locators: [{ path: packages/core/src/editing/history.ts, symbol: History }]
+    asserted_by:
+      - { path: packages/core/src/editing/history.test.ts, symbol: INV-HISTORY-LINEAR,
+          run: "pnpm vitest run packages/core/src/editing/history.test.ts -t 'INV-HISTORY-LINEAR'" }
+  INV-ROWSTATE:
+    locators: [{ path: packages/core/src/editing/edit-session.ts, symbol: ChangeTracker }]
+    asserted_by:
+      - { path: packages/core/src/api/structural.test.ts, symbol: INV-ROWSTATE,
+          run: "pnpm vitest run packages/core/src/api/structural.test.ts -t 'INV-ROWSTATE'" }
+  INV-RANGE-BOUNDS:
+    locators: [{ path: packages/core/src/selection/selection.ts, symbol: applyRowShift }]
+    asserted_by:
+      - { path: packages/core/src/api/structural.test.ts, symbol: re-clamp,
+          run: "pnpm vitest run packages/core/src/api/structural.test.ts -t 're-clamp'" }
+
+  # --- Slice 5: cell formatting + value masks + conditional formatting + theming ---
+  ENTITY-CELL-STYLE:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: CellStyle }
+      - { path: packages/core/src/format/style-cascade.ts, symbol: StyleCascade }
+  ENTITY-CONDITIONAL-RULE:
+    locators: [{ path: packages/core/src/format/conditional.ts, symbol: ConditionalRule }]
+  COMPONENT-FORMAT:
+    locators:
+      - { path: packages/core/src/format/style-cascade.ts, symbol: StyleCascade }
+      - { path: packages/core/src/format/format-mask.ts, symbol: formatValue }
+    asserted_by:
+      - { path: packages/core/src/format/style-cascade.test.ts, symbol: PATTERN-STYLE-CASCADE,
+          run: "pnpm vitest run packages/core/src/format/style-cascade.test.ts" }
+  COMPONENT-CONDFMT:
+    locators: [{ path: packages/core/src/format/conditional.ts, symbol: ConditionalFormatEngine }]
+    asserted_by:
+      - { path: packages/core/src/format/conditional.test.ts, symbol: COMPONENT-CONDFMT,
+          run: "pnpm vitest run packages/core/src/format/conditional.test.ts" }
+  PATTERN-STYLE-CASCADE:
+    locators: [{ path: packages/core/src/format/style-cascade.ts, symbol: StyleCascade }]
+    asserted_by:
+      - { path: packages/core/src/format/style-cascade.test.ts, symbol: "column default < cell overlay < conditional",
+          run: "pnpm vitest run packages/core/src/format/style-cascade.test.ts -t 'conditional winning'" }
+  LIB-SET-STYLE:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: setStyleImpl }]
+    asserted_by:
+      - { path: packages/core/src/format/format-grid.test.ts, symbol: LIB-SET-STYLE,
+          run: "pnpm vitest run packages/core/src/format/format-grid.test.ts -t 'LIB-SET-STYLE'" }
+  LIB-COND-FMT:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: addConditionalRuleImpl }
+      - { path: packages/core/src/api/grid.ts, symbol: removeConditionalRuleImpl }
+    asserted_by:
+      - { path: packages/core/src/format/format-grid.test.ts, symbol: CAP-COND-FMT,
+          run: "pnpm vitest run packages/core/src/format/format-grid.test.ts -t 'CAP-COND-FMT'" }
+      - { path: e2e/format.spec.ts, symbol: "value rule paints a red fill",
+          run: "pnpm exec playwright test e2e/format.spec.ts -g 'value rule'" }
+  LIB-THEME:
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: setTheme }
+      - { path: packages/core/src/api/grid.ts, symbol: setTheme }
+    asserted_by:
+      - { path: packages/core/src/format/format-grid.test.ts, symbol: CAP-THEME,
+          run: "pnpm vitest run packages/core/src/format/format-grid.test.ts -t 'CAP-THEME'" }
+      - { path: e2e/format.spec.ts, symbol: "toggling the dark theme changes a --mg-* token",
+          run: "pnpm exec playwright test e2e/format.spec.ts -g 'dark theme'" }
+  LIB-RENDERER-API:
+    locators: [{ path: packages/core/src/types.ts, symbol: CellRenderer }]
+    asserted_by:
+      - { path: packages/core/src/format/format-grid.test.ts, symbol: SEC-RENDERER-DOM-ONLY,
+          run: "pnpm vitest run packages/core/src/format/format-grid.test.ts -t 'SEC-RENDERER-DOM-ONLY'" }
+  LIB-FORMATTER-API:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: FormatterFn }
+      - { path: packages/core/src/format/format-mask.ts, symbol: formatValue }
+    asserted_by:
+      - { path: packages/core/src/format/format-mask.test.ts, symbol: CAP-FMT-VALUE,
+          run: "pnpm vitest run packages/core/src/format/format-mask.test.ts" }
+  LIB-CONDFMT-PREDICATE:
+    locators: [{ path: packages/core/src/types.ts, symbol: CondFmtPredicate }]
+    asserted_by:
+      - { path: packages/core/src/format/conditional.test.ts, symbol: "custom predicate",
+          run: "pnpm vitest run packages/core/src/format/conditional.test.ts -t 'custom predicate'" }
+  MSG-AGGREGATE:
+    locators:
+      - { path: packages/core/src/protocol/messages.ts, symbol: MsgAggregate }
+      - { path: packages/core/src/engine/index-engine.ts, symbol: aggregate }
+  MSG-AGGREGATE-RESULT:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgAggregateResult }]
+  SEC-RENDERER-DOM-ONLY:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: CellRenderer }
+      - { path: packages/core/src/api/grid.ts, symbol: decorateCell }
+    asserted_by:
+      - { path: packages/core/src/format/format-grid.test.ts, symbol: SEC-RENDERER-DOM-ONLY,
+          run: "pnpm vitest run packages/core/src/format/format-grid.test.ts -t 'SEC-RENDERER-DOM-ONLY'" }
+      - { path: e2e/format.spec.ts, symbol: "script-bearing value with a custom renderer does not execute",
+          run: "pnpm exec playwright test e2e/format.spec.ts -g 'does not execute'" }
+
+  # --- Slice 6a: public sort/filter + column resize/reorder + freeze panes ---
+  ENTITY-SORT-SPEC:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: SortSpec }
+      - { path: packages/core/src/engine/index-engine.ts, symbol: setSort }
+  ENTITY-FILTER:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: FilterSpec }
+      - { path: packages/core/src/engine/index-engine.ts, symbol: setFilter }
+  ENTITY-FREEZE-PANE:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: FreezePane }
+      - { path: packages/core/src/api/grid.ts, symbol: setFrozenImpl }
+  LIB-SORT:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: sortImpl }]
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: CAP-SORT,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-SORT'" }
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-SORT,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'CAP-SORT'" }
+  LIB-FILTER:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: filterImpl }]
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: CAP-FILTER,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-FILTER'" }
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-FILTER,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'CAP-FILTER'" }
+  LIB-RESIZE:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: setColumnWidthImpl }
+      - { path: packages/core/src/worksheet/header-controller.ts, symbol: HeaderController }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: CAP-RESIZE,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-RESIZE'" }
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-RESIZE,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'CAP-RESIZE'" }
+  LIB-REORDER:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: moveColumnImpl }
+      - { path: packages/core/src/worksheet/header-controller.ts, symbol: HeaderController }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: CAP-REORDER,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-REORDER'" }
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-REORDER,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'CAP-REORDER'" }
+  LIB-FREEZE:
+    locators: [{ path: packages/core/src/api/grid.ts, symbol: setFrozenImpl }]
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: CAP-FREEZE,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-FREEZE'" }
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-FREEZE,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'CAP-FREEZE'" }
+  LIB-COMPARATOR-API:
+    # `type Comparator = (a,b)=>number` (sort) + `type FilterPredicate = (value,ctx)=>boolean`,
+    # run in the data engine; the built-in filter operators build predicates for the menu.
+    locators:
+      - { path: packages/core/src/types.ts, symbol: Comparator }
+      - { path: packages/core/src/types.ts, symbol: FilterPredicate }
+      - { path: packages/core/src/engine/index-engine.ts, symbol: sortIndex }
+      - { path: packages/core/src/worksheet/filter-menu.ts, symbol: buildFilterPredicate }
+    asserted_by:
+      - { path: packages/core/src/worksheet/filter-menu.test.ts, symbol: buildFilterPredicate,
+          run: "pnpm vitest run packages/core/src/worksheet/filter-menu.test.ts" }
+  LAYER-FILTER-MENU:
+    locators: [{ path: packages/core/src/worksheet/filter-menu.ts, symbol: FilterMenuController }]
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: LAYER-FILTER-MENU,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'LAYER-FILTER-MENU'" }
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-FILTER,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'filter menu'" }
+  A11Y-FILTER-MENU:
+    locators: [{ path: packages/core/src/worksheet/filter-menu.ts, symbol: FilterMenuController }]
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: A11Y-FILTER-MENU,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'A11Y-FILTER-MENU'" }
+      - { path: e2e/worksheet.spec.ts, symbol: AC-AXE,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'filter menu open'" }
+      # Slice 11a: axe zero-violations with the filter menu open under dir=rtl.
+      - { path: e2e/a11y.spec.ts, symbol: "AC-AXE (RTL)",
+          run: "pnpm exec playwright test e2e/a11y.spec.ts -g 'dir=rtl'" }
+  # --- Worksheet header interactions (BIND-POINTER: shift-click multi-sort, filter icon, drag resize/reorder) ---
+  BIND-POINTER-HEADER:
+    locators: [{ path: packages/core/src/worksheet/header-controller.ts, symbol: HeaderController }]
+    asserted_by:
+      - { path: e2e/worksheet.spec.ts, symbol: CAP-SORT,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts" }
+  # DOM-HEADER now also carries aria-sort + the filter/resize affordances.
+  DOM-HEADER-SORT:
+    locators: [{ path: packages/core/src/render/renderer.ts, symbol: renderHeader }]
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: aria-sort,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-SORT'" }
+  # --- Event surface (Interfaces EVT-*) — sort/filter/resize/reorder/freeze pairs ---
+  EVT-BEFORE-SORT:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: sortImpl }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: EVT-BEFORE-SORT,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'EVT-BEFORE-SORT'" }
+  EVT-AFTER-SORT:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: sortImpl }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: afterSort,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'after events carry'" }
+  EVT-BEFORE-FILTER:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: filterImpl }
+  EVT-AFTER-FILTER:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: filterImpl }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: afterFilter,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'after events carry'" }
+  EVT-BEFORE-RESIZE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: commitWidth }
+  EVT-AFTER-RESIZE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: commitWidth }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: afterResize,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-RESIZE'" }
+  EVT-BEFORE-REORDER:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: moveColumnImpl }
+  EVT-AFTER-REORDER:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: moveColumnImpl }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: afterReorder,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-REORDER'" }
+  EVT-BEFORE-FREEZE-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: setFrozenImpl }
+  EVT-AFTER-FREEZE-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: setFrozenImpl }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: afterFreezeChange,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'CAP-FREEZE'" }
+  # --- Invariants (Domain) ---
+  INV-FREEZE-PREFIX:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: setFrozenImpl }
+      - { path: packages/core/src/api/grid.ts, symbol: frozenRowExtent }
+    asserted_by:
+      - { path: packages/core/src/worksheet/worksheet.test.ts, symbol: INV-FREEZE-PREFIX,
+          run: "pnpm vitest run packages/core/src/worksheet/worksheet.test.ts -t 'INV-FREEZE-PREFIX'" }
+
+  # --- Slice 6b: cell merge (CAP-MERGE) + row/column grouping (CAP-GROUP) ---
+  ENTITY-MERGE-REGION:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: MergeRegion }
+      - { path: packages/core/src/worksheet/merge.ts, symbol: MergeModel }
+  ENTITY-GROUP-NODE:
+    locators:
+      - { path: packages/core/src/types.ts, symbol: GroupNode }
+      - { path: packages/core/src/worksheet/group.ts, symbol: GroupModel }
+  LIB-MERGE:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: mergeImpl }
+      - { path: packages/core/src/api/grid.ts, symbol: unmergeImpl }
+    asserted_by:
+      - { path: packages/core/src/api/merge-group.test.ts, symbol: CAP-MERGE,
+          run: "pnpm vitest run packages/core/src/api/merge-group.test.ts -t 'CAP-MERGE'" }
+      - { path: e2e/worksheet.spec.ts, symbol: JOURNEY-STRUCTURE,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'JOURNEY-STRUCTURE'" }
+  LIB-GROUP:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: groupImpl }
+      - { path: packages/core/src/api/grid.ts, symbol: ungroupImpl }
+      - { path: packages/core/src/api/grid.ts, symbol: setCollapsedImpl }
+    asserted_by:
+      - { path: packages/core/src/api/merge-group.test.ts, symbol: CAP-GROUP,
+          run: "pnpm vitest run packages/core/src/api/merge-group.test.ts -t 'CAP-GROUP'" }
+      - { path: e2e/worksheet.spec.ts, symbol: JOURNEY-STRUCTURE,
+          run: "pnpm exec playwright test e2e/worksheet.spec.ts -g 'JOURNEY-STRUCTURE'" }
+  INV-MERGE-NONOVERLAP:
+    locators:
+      - { path: packages/core/src/worksheet/merge.ts, symbol: MergeModel }
+      - { path: packages/core/src/worksheet/merge.ts, symbol: mergeInvariantHolds }
+    asserted_by:
+      - { path: packages/core/src/worksheet/structure.test.ts, symbol: INV-MERGE-NONOVERLAP,
+          run: "pnpm vitest run packages/core/src/worksheet/structure.test.ts -t 'INV-MERGE-NONOVERLAP'" }
+  INV-MERGE-MIN2:
+    locators:
+      - { path: packages/core/src/worksheet/merge.ts, symbol: MergeModel }
+      - { path: packages/core/src/worksheet/merge.ts, symbol: mergeInvariantHolds }
+    asserted_by:
+      - { path: packages/core/src/worksheet/structure.test.ts, symbol: INV-MERGE-MIN2,
+          run: "pnpm vitest run packages/core/src/worksheet/structure.test.ts -t 'INV-MERGE'" }
+  INV-GROUP-NEST:
+    locators:
+      - { path: packages/core/src/worksheet/group.ts, symbol: GroupModel }
+      - { path: packages/core/src/worksheet/group.ts, symbol: groupInvariantHolds }
+    asserted_by:
+      - { path: packages/core/src/worksheet/structure.test.ts, symbol: INV-GROUP-NEST,
+          run: "pnpm vitest run packages/core/src/worksheet/structure.test.ts -t 'INV-GROUP-NEST'" }
+  EVT-BEFORE-MERGE-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: mergeImpl }
+  EVT-AFTER-MERGE-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: mergeImpl }
+    asserted_by:
+      - { path: packages/core/src/api/merge-group.test.ts, symbol: beforeMergeChange,
+          run: "pnpm vitest run packages/core/src/api/merge-group.test.ts -t 'vetoed EVT-BEFORE-MERGE-CHANGE'" }
+  EVT-BEFORE-GROUP-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: groupImpl }
+  EVT-AFTER-GROUP-CHANGE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/api/grid.ts, symbol: groupImpl }
+    asserted_by:
+      - { path: packages/core/src/api/merge-group.test.ts, symbol: CAP-GROUP,
+          run: "pnpm vitest run packages/core/src/api/merge-group.test.ts -t 'CAP-GROUP'" }
+  # ERR-* (Interfaces error catalog) — thrown at the operation, source:'operation'.
+  MERGE_OVERLAP:
+    locators:
+      - { path: packages/core/src/errors.ts, symbol: ErrCode }
+      - { path: packages/core/src/worksheet/merge.ts, symbol: MergeModel }
+    asserted_by:
+      - { path: packages/core/src/worksheet/structure.test.ts, symbol: INV-MERGE-NONOVERLAP,
+          run: "pnpm vitest run packages/core/src/worksheet/structure.test.ts -t 'MERGE_OVERLAP'" }
+  GROUP_OVERLAP:
+    locators:
+      - { path: packages/core/src/errors.ts, symbol: ErrCode }
+      - { path: packages/core/src/worksheet/group.ts, symbol: GroupModel }
+    asserted_by:
+      - { path: packages/core/src/worksheet/structure.test.ts, symbol: INV-GROUP-NEST,
+          run: "pnpm vitest run packages/core/src/worksheet/structure.test.ts -t 'GROUP_OVERLAP'" }
+
+  # --- Slice 7: clipboard (copy / cut / paste / fill) ---
+  COMPONENT-CLIPBOARD:
+    locators: [{ path: packages/core/src/clipboard/clipboard.ts, symbol: ClipboardController }]
+  LIB-CLIPBOARD:
+    locators:
+      - { path: packages/core/src/clipboard/clipboard.ts, symbol: ClipboardController }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+    asserted_by:
+      - { path: packages/core/src/clipboard/clipboard.test.ts, symbol: "COMPONENT-CLIPBOARD",
+          run: "pnpm vitest run packages/core/src/clipboard/clipboard.test.ts" }
+      - { path: e2e/clipboard.spec.ts, symbol: "JOURNEY-RANGE-OPS",
+          run: "pnpm exec playwright test e2e/clipboard.spec.ts -g 'JOURNEY-RANGE-OPS'" }
+  MSG-PASTE-APPLY:
+    locators:
+      - { path: packages/core/src/protocol/messages.ts, symbol: MsgPasteApply }
+      - { path: packages/core/src/engine/index-engine.ts, symbol: applyPaste }
+      - { path: packages/core/src/protocol/data-client.ts, symbol: pasteApply }
+  EVT-BEFORE-PASTE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridBeforeEvents }
+      - { path: packages/core/src/clipboard/clipboard.ts, symbol: paste }
+    asserted_by:
+      - { path: packages/core/src/clipboard/clipboard.test.ts, symbol: "EVT-BEFORE-PASTE veto aborts the whole paste",
+          run: "pnpm vitest run packages/core/src/clipboard/clipboard.test.ts -t 'veto aborts'" }
+  EVT-AFTER-PASTE:
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: GridAfterEvents }
+      - { path: packages/core/src/clipboard/clipboard.ts, symbol: paste }
+    asserted_by:
+      - { path: packages/core/src/clipboard/clipboard.test.ts, symbol: "EVT-AFTER-PASTE carries { targetRange, data }",
+          run: "pnpm vitest run packages/core/src/clipboard/clipboard.test.ts -t 'EVT-AFTER-PASTE'" }
+  SEC-PASTE-UNTRUSTED:
+    locators:
+      - { path: packages/core/src/clipboard/clipboard.ts, symbol: parseTsv }
+      - { path: packages/core/src/clipboard/clipboard.ts, symbol: readClipboard }
+    asserted_by:
+      - { path: packages/core/src/clipboard/clipboard.test.ts, symbol: SEC-PASTE-UNTRUSTED,
+          run: "pnpm vitest run packages/core/src/clipboard/clipboard.test.ts -t 'SEC-PASTE-UNTRUSTED'" }
+      - { path: e2e/clipboard.spec.ts, symbol: SEC-PASTE-UNTRUSTED,
+          run: "pnpm exec playwright test e2e/clipboard.spec.ts -g 'SEC-PASTE-UNTRUSTED'" }
+
+  # --- Slice 8: export (CAP-EXPORT) + state persistence (CAP-PERSIST-STATE) ---
+  COMPONENT-EXPORT:
+    locators:
+      - { path: packages/core/src/export/export.ts, symbol: ExportController }
+    asserted_by:
+      - { path: packages/core/src/export/export.test.ts, symbol: "LIB-EXPORT.exportCsv (COMPONENT-EXPORT / CAP-EXPORT)",
+          run: "pnpm vitest run packages/core/src/export/export.test.ts" }
+      - { path: e2e/export.spec.ts, symbol: "CAP-EXPORT",
+          run: "pnpm exec playwright test e2e/export.spec.ts -g 'CAP-EXPORT'" }
+  COMPONENT-STATE-SERDE:
+    locators:
+      - { path: packages/core/src/state/state-serde.ts, symbol: GridState }
+      - { path: packages/core/src/api/grid.ts, symbol: serializeStateImpl }
+      - { path: packages/core/src/api/grid.ts, symbol: restoreStateImpl }
+    asserted_by:
+      - { path: packages/core/src/state/state-serde.test.ts, symbol: "LIB-STATE serialize/restore (COMPONENT-STATE-SERDE / AC-STATE-VERSION)",
+          run: "pnpm vitest run packages/core/src/state/state-serde.test.ts" }
+      - { path: e2e/export.spec.ts, symbol: "CAP-PERSIST-STATE",
+          run: "pnpm exec playwright test e2e/export.spec.ts -g 'CAP-PERSIST-STATE'" }
+  LIB-EXPORT:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: exportCsv }
+      - { path: packages/core/src/api/grid.ts, symbol: exportXlsx }
+      - { path: packages/core/src/export/export.ts, symbol: ExportController }
+    asserted_by:
+      - { path: packages/core/src/export/export.test.ts, symbol: "default scope respects the filter; opts.allData exports the full dataset",
+          run: "pnpm vitest run packages/core/src/export/export.test.ts -t 'allData'" }
+      - { path: e2e/export.spec.ts, symbol: "CAP-EXPORT: exportCsv serializes the view + neutralizes a formula value",
+          run: "pnpm exec playwright test e2e/export.spec.ts -g 'exportCsv serializes'" }
+  LIB-STATE:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: serializeState }
+      - { path: packages/core/src/api/grid.ts, symbol: restoreState }
+    asserted_by:
+      - { path: packages/core/src/state/state-serde.test.ts, symbol: "round-trips widths / order / sort / filter / frozen / merges / styles",
+          run: "pnpm vitest run packages/core/src/state/state-serde.test.ts -t 'round-trips'" }
+  GridState.version:
+    locators:
+      - { path: packages/core/src/state/state-serde.ts, symbol: GRID_STATE_VERSION }
+      - { path: packages/core/src/state/state-serde.ts, symbol: checkStateVersion }
+    asserted_by:
+      - { path: packages/core/src/state/state-serde.test.ts, symbol: "an unknown future GridState.version → INVALID_OPTIONS warning",
+          run: "pnpm vitest run packages/core/src/state/state-serde.test.ts -t 'future GridState.version'" }
+  DEP-XLSX:
+    locators:
+      - { path: packages/core/package.json, symbol: optionalDependencies.exceljs }
+      - { path: packages/core/src/export/export.ts, symbol: ExportController.exportXlsx }
+      - { path: packages/core/src/api/grid.ts, symbol: loadExcel }
+    asserted_by:
+      - { path: packages/core/src/export/export.test.ts, symbol: "maps value + numFmt + font/fill/border/alignment + merges + frozen + width",
+          run: "pnpm vitest run packages/core/src/export/export.test.ts -t 'AC-XLSX-MAPPING'" }
+      - { path: e2e/export.spec.ts, symbol: "AC-XLSX-FAILSOFT: exportXlsx rejects XLSX_UNAVAILABLE; exportCsv still works",
+          run: "pnpm exec playwright test e2e/export.spec.ts -g 'AC-XLSX-FAILSOFT'" }
+  SEC-EXPORT-FORMULA-GUARD:
+    locators:
+      - { path: packages/core/src/export/formula-guard.ts, symbol: guardFormula }
+      - { path: packages/core/src/export/formula-guard.ts, symbol: needsFormulaGuard }
+    asserted_by:
+      - { path: packages/core/src/export/export.test.ts, symbol: "SEC-EXPORT-FORMULA-GUARD (AC-EXPORT-GUARD)",
+          run: "pnpm vitest run packages/core/src/export/export.test.ts -t 'SEC-EXPORT-FORMULA-GUARD'" }
+      - { path: e2e/export.spec.ts, symbol: "CAP-EXPORT: exportCsv serializes the view + neutralizes a formula value",
+          run: "pnpm exec playwright test e2e/export.spec.ts -g 'neutralizes a formula'" }
+  XLSX_UNAVAILABLE:
+    locators:
+      - { path: packages/core/src/export/export.ts, symbol: ExportController.unavailable }
+    asserted_by:
+      - { path: packages/core/src/export/export.test.ts, symbol: "AC-XLSX-FAILSOFT: import failure rejects XLSX_UNAVAILABLE + EVT-ERROR; CSV still works",
+          run: "pnpm vitest run packages/core/src/export/export.test.ts -t 'AC-XLSX-FAILSOFT'" }
+      - { path: e2e/export.spec.ts, symbol: "AC-XLSX-FAILSOFT: exportXlsx rejects XLSX_UNAVAILABLE; exportCsv still works",
+          run: "pnpm exec playwright test e2e/export.spec.ts -g 'AC-XLSX-FAILSOFT'" }
+  EXPORT_FAILED:
+    locators:
+      - { path: packages/core/src/export/export.ts, symbol: ExportController.fail }
+    asserted_by:
+      - { path: packages/core/src/export/export.test.ts, symbol: "EXPORT_FAILED when serialization throws (+ EVT-ERROR)",
+          run: "pnpm vitest run packages/core/src/export/export.test.ts -t 'EXPORT_FAILED'" }
+
+  # --- Slice 9: i18n + RTL (COMPONENT-I18N, CAP-I18N, LIB-LOCALE) ---
+  # Realizes CAP-I18N (P&R) and the i18n contract in A11Y (11.14): string
+  # externalization (English default bundle + t()), locale-aware Intl formats
+  # integrated with CAP-FMT-VALUE masks, Intl.PluralRules pluralization, and full
+  # RTL mirroring (dir on DOM-ROOT + logical inset-inline positioning).
+  COMPONENT-I18N:
+    locators:
+      - { path: packages/core/src/i18n/i18n.ts, symbol: I18nController }
+      - { path: packages/core/src/i18n/i18n.ts, symbol: DEFAULT_BUNDLE }
+      - { path: packages/core/src/i18n/i18n.ts, symbol: I18nController.translate }
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer.setDirection }
+      - { path: packages/core/src/worksheet/filter-menu.ts, symbol: FilterMenuController.open }
+      - { path: packages/core/src/interaction/context-menu.ts, symbol: ContextMenuController.open }
+      - { path: packages/core/src/editing/validation.ts, symbol: compileValidation }
+    asserted_by:
+      - { path: packages/core/src/i18n/i18n.test.ts, symbol: "COMPONENT-I18N — string catalog + t() (CAP-I18N)",
+          run: "pnpm vitest run packages/core/src/i18n/i18n.test.ts -t 'COMPONENT-I18N'" }
+      - { path: e2e/i18n.spec.ts, symbol: "AC-RTL / AC-AXE (RTL)",
+          run: "pnpm exec playwright test e2e/i18n.spec.ts -g 'AC-RTL'" }
+  # CAP-I18N (P&R capability) — realized by COMPONENT-I18N above; the same test set
+  # verifies externalization + locale formats + pluralization + RTL.
+  CAP-I18N:
+    locators:
+      - { path: packages/core/src/i18n/i18n.ts, symbol: I18nController }
+      - { path: packages/core/src/api/grid.ts, symbol: inlineScroll }
+    asserted_by:
+      - { path: packages/core/src/i18n/i18n.test.ts, symbol: "LIB-LOCALE — grid.setLocale / setDirection (COMPONENT-I18N)",
+          run: "pnpm vitest run packages/core/src/i18n/i18n.test.ts -t 'LIB-LOCALE'" }
+      - { path: e2e/i18n.spec.ts, symbol: "AC-RTL: setDirection(rtl) mirrors column order + pins the frozen column to the right",
+          run: "pnpm exec playwright test e2e/i18n.spec.ts -g 'mirrors column order'" }
+  # A11Y i18n contract (11.14: externalized strings + Intl formats + RTL + PluralRules).
+  A11Y-I18N:
+    locators:
+      - { path: packages/core/src/i18n/i18n.ts, symbol: DEFAULT_BUNDLE }
+      - { path: packages/core/src/render/renderer.ts, symbol: GridRenderer.renderHeader }
+    asserted_by:
+      - { path: packages/core/src/i18n/i18n.test.ts, symbol: "a host bundle swaps a rendered menu/label string (proves externalization)",
+          run: "pnpm vitest run packages/core/src/i18n/i18n.test.ts -t 'proves externalization'" }
+      - { path: e2e/i18n.spec.ts, symbol: "AC-AXE (RTL): axe-core reports zero violations with the grid in RTL",
+          run: "pnpm exec playwright test e2e/i18n.spec.ts -g 'AC-AXE'" }
+  LIB-LOCALE:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: setLocale }
+      - { path: packages/core/src/api/grid.ts, symbol: setDirection }
+      - { path: packages/core/src/i18n/i18n.ts, symbol: I18nController.setLocale }
+      - { path: packages/core/src/i18n/i18n.ts, symbol: I18nController.setDirection }
+    asserted_by:
+      - { path: packages/core/src/i18n/i18n.test.ts, symbol: "setLocale re-locales a value-format mask (en-US → de-DE)",
+          run: "pnpm vitest run packages/core/src/i18n/i18n.test.ts -t 're-locales a value-format mask'" }
+      - { path: packages/core/src/i18n/i18n.test.ts, symbol: "setDirection(rtl) sets dir=rtl on DOM-ROOT + the --mg-dir token",
+          run: "pnpm vitest run packages/core/src/i18n/i18n.test.ts -t 'setDirection'" }
+      - { path: e2e/i18n.spec.ts, symbol: "LIB-LOCALE: setLocale re-locales a value-format mask (en-US → de-DE)",
+          run: "pnpm exec playwright test e2e/i18n.spec.ts -g 'LIB-LOCALE'" }
+
+  # --- Slice 10: framework adapters (thin wrappers over the core PUBLIC api;
+  # AC-BOUNDARY — adapters import @mini-grid/core's public surface only, never
+  # inline it). Each mounts the same core the plain-HTML E2E proves
+  # (SUCCESS-FRAMEWORK-AGNOSTIC). Frameworks are optional peerDependencies
+  # (DEP-REACT/-VUE/-SVELTE), versioned in lockstep with the core. ---
+  COMPONENT-ADAPTER-REACT:
+    locators:
+      - { path: packages/react/src/index.ts, symbol: MiniGrid }
+      - { path: packages/react/src/index.ts, symbol: MiniGridProps }
+    asserted_by:
+      - { path: packages/react/src/mini-grid.test.ts, symbol: "@mini-grid/react <MiniGrid>",
+          run: "pnpm vitest run packages/react/src/mini-grid.test.ts" }
+  COMPONENT-ADAPTER-VUE:
+    locators:
+      - { path: packages/vue/src/index.ts, symbol: MiniGrid }
+    asserted_by:
+      - { path: packages/vue/src/mini-grid.test.ts, symbol: "@mini-grid/vue <MiniGrid>",
+          run: "pnpm vitest run packages/vue/src/mini-grid.test.ts" }
+  COMPONENT-ADAPTER-SVELTE:
+    locators:
+      - { path: packages/svelte/src/index.ts, symbol: miniGrid }
+      - { path: packages/svelte/src/index.ts, symbol: createMiniGrid }
+    asserted_by:
+      - { path: packages/svelte/src/mini-grid.test.ts, symbol: "@mini-grid/svelte miniGrid action",
+          run: "pnpm vitest run packages/svelte/src/mini-grid.test.ts" }
+  # DEP-* — the framework peer dependencies (optional), declared per adapter
+  # package and versioned in lockstep with @mini-grid/core.
+  DEP-REACT:
+    locators:
+      - { path: packages/react/package.json, symbol: peerDependencies.react }
+  DEP-VUE:
+    locators:
+      - { path: packages/vue/package.json, symbol: peerDependencies.vue }
+  DEP-SVELTE:
+    locators:
+      - { path: packages/svelte/package.json, symbol: peerDependencies.svelte }
+  # SUCCESS-FRAMEWORK-AGNOSTIC — the grid mounts + works in plain HTML AND via
+  # each adapter. Plain-HTML is proven by the existing E2E; each adapter test
+  # proves the wrapper mounts the same core (role=grid, aria-rowcount, events).
+  SUCCESS-FRAMEWORK-AGNOSTIC:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+      - { path: packages/react/src/index.ts, symbol: MiniGrid }
+      - { path: packages/vue/src/index.ts, symbol: MiniGrid }
+      - { path: packages/svelte/src/index.ts, symbol: miniGrid }
+    asserted_by:
+      - { path: packages/react/src/mini-grid.test.ts, symbol: "mounts a role=grid with the right aria-rowcount",
+          run: "pnpm vitest run packages/react/src/mini-grid.test.ts -t 'mounts a role=grid'" }
+      - { path: packages/vue/src/mini-grid.test.ts, symbol: "mounts, reflects data updates, emits events, destroys on unmount",
+          run: "pnpm vitest run packages/vue/src/mini-grid.test.ts" }
+      - { path: packages/svelte/src/mini-grid.test.ts, symbol: "mounts, reflects data updates, forwards events, destroys on teardown",
+          run: "pnpm vitest run packages/svelte/src/mini-grid.test.ts" }
+      - { path: e2e/grid.spec.ts, symbol: "plain-HTML mount (core mounts without any framework)",
+          run: "pnpm exec playwright test e2e/grid.spec.ts" }
+
+  # --- Slice 11a: SEC-CSP-COMPAT (the CSP/a11y slice of Security; the full
+  # static-scan battery — SEC-NO-EVAL/-EGRESS/-PERSIST/-LOG-VALUES — lands 11b) ---
+  SEC-CSP-COMPAT:
+    locators:
+      # No eval/new Function/inline-script in core (Trusted-Types-friendly by
+      # construction); the worker source is configurable via `workerUrl` so a
+      # strict-CSP host serves a same-origin module worker (no blob:). Default is
+      # the in-process transport (no worker at all).
+      - { path: packages/core/src/api/grid.ts, symbol: createTransport }
+      - { path: packages/core/src/api/options.ts, symbol: "GridOptions.workerUrl" }
+      - { path: packages/core/src/protocol/transport.ts, symbol: InProcessTransport }
+    asserted_by:
+      - { path: e2e/a11y.spec.ts, symbol: AC-CSP,
+          run: "pnpm exec playwright test e2e/a11y.spec.ts -g 'AC-CSP'" }
+
+  # --- Slice 11b: Security static-scan battery (SEC-NO-* negative/hygiene
+  # assertions) + feature-flag ON/OFF pairwise matrix (AC-FLAGS) + PERF-SCROLL
+  # dirty-diff re-assert. The SEC-NO-* are checked against the BUILT core bundle
+  # (packages/core/dist/index.js); the runtime active controls are re-asserted
+  # page-governed in e2e/security.spec.ts. ---
+  SEC-NO-EGRESS:
+    locators:
+      # Absence contract: no fetch/XHR/WebSocket/sendBeacon/EventSource anywhere in
+      # core. The default transport is in-process (no network); the optional worker
+      # is a same-origin module worker (no egress of its own).
+      - { path: packages/core/src/protocol/transport.ts, symbol: InProcessTransport }
+      - { path: packages/core/src/api/grid.ts, symbol: createTransport }
+    asserted_by:
+      - { path: packages/core/src/security.static.test.ts, symbol: SEC-NO-EGRESS,
+          run: "pnpm vitest run packages/core/src/security.static.test.ts -t 'SEC-NO-EGRESS'" }
+  SEC-NO-PERSIST:
+    locators:
+      # serializeState() RETURNS state to the caller; the grid writes no storage of
+      # its own (no localStorage/sessionStorage/cookie/indexedDB).
+      - { path: packages/core/src/api/grid.ts, symbol: serializeStateImpl }
+    asserted_by:
+      - { path: packages/core/src/security.static.test.ts, symbol: SEC-NO-PERSIST,
+          run: "pnpm vitest run packages/core/src/security.static.test.ts -t 'SEC-NO-PERSIST'" }
+  SEC-NO-EVAL:
+    locators:
+      # Predicates/validators/formatters/comparators are developer functions, never
+      # stringified code — no eval / new Function on any path.
+      - { path: packages/core/src/editing/validation.ts, symbol: compileValidation }
+      - { path: packages/core/src/format/conditional.ts, symbol: ConditionalFormatEngine }
+    asserted_by:
+      - { path: packages/core/src/security.static.test.ts, symbol: SEC-NO-EVAL,
+          run: "pnpm vitest run packages/core/src/security.static.test.ts -t 'SEC-NO-EVAL'" }
+  SEC-NO-SECRETS:
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+    asserted_by:
+      - { path: packages/core/src/security.static.test.ts, symbol: SEC-NO-SECRETS,
+          run: "pnpm vitest run packages/core/src/security.static.test.ts -t 'SEC-NO-SECRETS'" }
+  SEC-NO-LOG-VALUES:
+    locators:
+      # GridError.context references cells by (rowKey, columnId), never by value; no
+      # console.* of cell values anywhere in the bundle (PATTERN-ERROR never logs).
+      - { path: packages/core/src/errors.ts, symbol: ErrContext }
+    asserted_by:
+      - { path: packages/core/src/security.static.test.ts, symbol: SEC-NO-LOG-VALUES,
+          run: "pnpm vitest run packages/core/src/security.static.test.ts -t 'SEC-NO-LOG-VALUES'" }
+  AC-STATIC-SCAN:
+    locators:
+      - { path: packages/core/src/security.static.test.ts, symbol: AC-STATIC-SCAN }
+    asserted_by:
+      - { path: packages/core/src/security.static.test.ts, symbol: "AC-STATIC-SCAN — Security negative/hygiene battery over the built core bundle",
+          run: "pnpm vitest run packages/core/src/security.static.test.ts" }
+  # Runtime active controls re-asserted page-governed in one battery (AC-XSS / AC-PASTE
+  # / AC-EXPORT-GUARD) — the observable half of SEC-ESCAPE-DEFAULT / -PASTE-UNTRUSTED /
+  # -EXPORT-FORMULA-GUARD.
+  AC-XSS:
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: paintRow }
+    asserted_by:
+      - { path: e2e/security.spec.ts, symbol: AC-XSS,
+          run: "pnpm exec playwright test e2e/security.spec.ts -g 'AC-XSS'" }
+  AC-PASTE:
+    locators:
+      - { path: packages/core/src/clipboard/clipboard.ts, symbol: readClipboard }
+    asserted_by:
+      - { path: e2e/security.spec.ts, symbol: AC-PASTE,
+          run: "pnpm exec playwright test e2e/security.spec.ts -g 'AC-PASTE'" }
+  AC-EXPORT-GUARD:
+    locators:
+      - { path: packages/core/src/export/formula-guard.ts, symbol: guardFormula }
+    asserted_by:
+      - { path: e2e/security.spec.ts, symbol: AC-EXPORT-GUARD,
+          run: "pnpm exec playwright test e2e/security.spec.ts -g 'AC-EXPORT-GUARD'" }
+  # AC-FLAGS — feature-flag ON/OFF + representative pairwise matrix.
+  AC-FLAGS:
+    locators:
+      - { path: packages/core/src/api/features.ts, symbol: FeatureRegistry }
+      - { path: packages/core/src/api/grid.ts, symbol: createGrid }
+    asserted_by:
+      - { path: packages/core/src/flags.matrix.test.ts, symbol: "AC-FLAGS — every capability ON (affordance present) and OFF (no affordance)",
+          run: "pnpm vitest run packages/core/src/flags.matrix.test.ts -t 'every capability ON'" }
+      - { path: packages/core/src/flags.matrix.test.ts, symbol: "AC-FLAGS — representative pairwise interactions",
+          run: "pnpm vitest run packages/core/src/flags.matrix.test.ts -t 'representative pairwise'" }
+  # PERF-SCROLL re-assert (slice 11 hardening) — the renderer dirty-diff (keyed row
+  # pool) lands the p95 at 16.8ms with long-frame fraction ~2% (from 33.4ms / ~38%).
+  # PERF-* are gate-owned (measured by the harness), bound here for the re-assert.
+  PERF-SCROLL:
+    locators:
+      - { path: packages/core/src/render/renderer.ts, symbol: renderKeyed }
+      - { path: packages/core/src/render/renderer.ts, symbol: paintRow }
+      - { path: packages/core/src/api/grid.ts, symbol: refresh }
+    asserted_by:
+      - { path: e2e/perf/scroll-perf.mjs, symbol: "SEQ-SCROLL — median-of-5 p95 + long-frame fraction",
+          run: "node e2e/perf/scroll-perf.mjs" }
+
+  # SUCCESS-DX (slice 12) — docs + demo are DELIVERABLES (not CAP-*). The
+  # kitchen-sink demo exercises every CAP-*; the developer docs + typechecked
+  # examples + generated TypeDoc reference realize the developer-experience
+  # criterion. Release/deploy tooling is set up but NOT triggered (see notes).
+  SUCCESS-DX:
+    locators:
+      - { path: demo/kitchen-sink.html, symbol: kitchen-sink demo page }
+      - { path: demo/kitchen-sink.js, symbol: build }
+      - { path: README.md, symbol: Getting started }
+      - { path: docs/guide, symbol: developer guides }
+      - { path: docs/examples, symbol: typechecked usage examples }
+      - { path: typedoc.json, symbol: "docs:api — TypeDoc API reference" }
+    asserted_by:
+      - { path: e2e/kitchen-sink.spec.ts, symbol: "SUCCESS-DX — driving every CAP control leaves no unexpected error",
+          run: "pnpm exec playwright test e2e/kitchen-sink.spec.ts" }
+      - { path: e2e/kitchen-sink.spec.ts, symbol: "CAP-A11Y: axe reports zero violations after exercising the grid",
+          run: "pnpm exec playwright test e2e/kitchen-sink.spec.ts -g 'CAP-A11Y'" }
+      # v1.3/v1.4 header/menu/selection subsystem (slices 17–20) — the kitchen-sink
+      # now also exercises the new caps, restoring the SUCCESS-DX "every CAP-*" claim.
+      - { path: e2e/kitchen-sink.spec.ts, symbol: "CAP-HEADER: row-number gutter, a custom headerRender, and a headerTooltip render",
+          run: "pnpm exec playwright test e2e/kitchen-sink.spec.ts -g 'CAP-HEADER'" }
+      - { path: e2e/kitchen-sink.spec.ts, symbol: "CAP-COLUMN-MANAGE: hide/show, pin, and autofit change the header (EVT-COLUMN-*)",
+          run: "pnpm exec playwright test e2e/kitchen-sink.spec.ts -g 'CAP-COLUMN-MANAGE'" }
+      - { path: e2e/kitchen-sink.spec.ts, symbol: "CAP-MENU: cell menu vs header menu; axe clean with a menu open",
+          run: "pnpm exec playwright test e2e/kitchen-sink.spec.ts -g 'CAP-MENU'" }
+      - { path: e2e/kitchen-sink.spec.ts, symbol: "CAP-SELECT (multi-range): Ctrl-click adds a disjoint range; a header click line-selects the column",
+          run: "pnpm exec playwright test e2e/kitchen-sink.spec.ts -g 'multi-range'" }
+      - { path: docs/examples/tsconfig.json, symbol: "docs:check — examples typecheck against the built types",
+          run: "pnpm docs:check" }
+    notes: >
+      Release/deploy tooling set up but not triggered: .changeset/config.json
+      (fixed lockstep group [["@mini-grid/*"]]) + the `release` script
+      (`changeset publish`); .github/workflows/release.yml (tag-`v*`-gated npm
+      lockstep publish, guarded by the NPM_TOKEN secret);
+      .github/workflows/pages.yml (demo pages + TypeDoc API docs → GitHub Pages;
+      Pages must be enabled, and a private repo needs GitHub Pro).
+
+  # --- v1.1 slice 15: real-worker seam (CE-WORKER-SEAM) worker protocol additions ---
+  MSG-EXPORT-ROWS:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgExportRows }]
+  MSG-SET-INDEX:
+    locators: [{ path: packages/core/src/protocol/messages.ts, symbol: MsgSetIndex }]
+
+  # --- v1.1 performance optimization pass (CE-PERF-1..14) — hot-path guard contracts ---
+  # BUILD-NEW, stubbed empty-locator: bound to their *.bench.ts + behavior tests when the
+  # optimization slices (22–35, Tier-1-first) land. Unlike the PERF-* budget targets
+  # (PERF-SCROLL etc.) which are their own perf-tier gate and NOT bound (see header), these
+  # are structural/behavioral regression guards that DO bind (bench + assertion). All items
+  # are additive/internal (output byte-identical) — NO existing locator changes.
+  PERF-CELL-PATH:            # slice 22–25 (P1–P4) — per-visible-cell decorate path: no Intl.*Format/cell, O(1) column lookup, no per-cell alloc
+    # ✅ FULLY REALIZED (P1–P4, slices 22–25): Intl formatters memoized; conditional rules
+    # priority-sorted once per mutation; cascade base-style via store O(1) getColumn; memo-key
+    # threaded (no rebuild on miss) + parseHex memoized (no per-cell re-parse of static colors).
+    locators:
+      - { path: packages/core/src/format/format-mask.ts, symbol: compiledMaskCache }
+      - { path: packages/core/src/format/conditional.ts, symbol: sortedRules }
+      - { path: packages/core/src/format/conditional.ts, symbol: hexCache }
+      - { path: packages/core/src/store/store.ts, symbol: getColumn }
+    asserted_by:
+      - { path: packages/core/src/format/format-mask.bench.ts, symbol: PERF-CELL-PATH,
+          run: "pnpm exec vitest bench packages/core/src/format/format-mask.bench.ts --run" }
+      - { path: packages/core/src/format/format-mask.test.ts, symbol: memoized-formatters,
+          run: "pnpm vitest run packages/core/src/format/format-mask.test.ts" }
+      - { path: packages/core/src/format/conditional.bench.ts, symbol: PERF-CELL-PATH,
+          run: "pnpm exec vitest bench packages/core/src/format/conditional.bench.ts --run" }
+      - { path: packages/core/src/format/conditional.test.ts, symbol: priority-order-independent-of-add-order,
+          run: "pnpm vitest run packages/core/src/format/conditional.test.ts" }
+      - { path: packages/core/src/api/column-lookup.bench.ts, symbol: PERF-CELL-PATH,
+          run: "pnpm exec vitest bench packages/core/src/api/column-lookup.bench.ts --run" }
+      - { path: packages/core/src/format/format-grid.test.ts, symbol: column-defaultStyle,
+          run: "pnpm vitest run packages/core/src/format/format-grid.test.ts" }
+  PERF-FRAME-STEADY:         # slice 26–30,33 (P5–P9,P12) — scroll-only refresh: no per-row Maps, reused group nodes, window/emit/export once
+    # DONE: P5 (26, group-outline reuse) + P6 (27, per-row merge resolve) + P7 (28, single
+    # mergeModel.list) + P9 (30, scroll window computed once). P8 (29) REJECTED by benchmark
+    # (emit snapshot already >14M/s). P12 (33) extends (export single-pass).
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: groupToggleNodes }
+      - { path: packages/core/src/render/renderer.ts, symbol: EMPTY_MERGES }
+    asserted_by:
+      - { path: packages/core/src/api/group-outline.bench.ts, symbol: PERF-FRAME-STEADY,
+          run: "pnpm exec vitest bench packages/core/src/api/group-outline.bench.ts --run" }
+      - { path: packages/core/src/api/merge-group.test.ts, symbol: CAP-GROUP,
+          run: "pnpm vitest run packages/core/src/api/merge-group.test.ts" }
+      - { path: packages/core/src/render/merge-lookup.bench.ts, symbol: PERF-FRAME-STEADY,
+          run: "pnpm exec vitest bench packages/core/src/render/merge-lookup.bench.ts --run" }
+      - { path: packages/core/src/api/scroll-window.bench.ts, symbol: PERF-FRAME-STEADY,
+          run: "pnpm exec vitest bench packages/core/src/api/scroll-window.bench.ts --run" }
+      - { path: packages/core/src/protocol/export-rows.bench.ts, symbol: PERF-FRAME-STEADY,
+          run: "pnpm exec vitest bench packages/core/src/protocol/export-rows.bench.ts --run" }
+  SCALE-AGG-TOPN:            # slice 32 (P11) DONE — top-N aggregate O(n·count) not O(n log n)+clone
+    locators:
+      - { path: packages/core/src/engine/index-engine.ts, symbol: aggregate }
+    asserted_by:
+      - { path: packages/core/src/engine/aggregate-topn.bench.ts, symbol: SCALE-AGG-TOPN,
+          run: "pnpm exec vitest bench packages/core/src/engine/aggregate-topn.bench.ts --run" }
+      - { path: packages/core/src/engine/index-engine.test.ts, symbol: SCALE-AGG-TOPN,
+          run: "pnpm vitest run packages/core/src/engine/index-engine.test.ts" }
+  SCALE-FILTER-CTX:          # slice 31 (P10) DONE — built-in filter: no per-row context object (built-ins ignore it)
+    locators:
+      - { path: packages/core/src/engine/index-engine.ts, symbol: buildFilteredIndex }
+    asserted_by:
+      - { path: packages/core/src/engine/filter-context.bench.ts, symbol: SCALE-FILTER-CTX,
+          run: "pnpm exec vitest bench packages/core/src/engine/filter-context.bench.ts --run" }
+      - { path: packages/core/src/engine/index-engine.test.ts, symbol: buildFilteredIndex,
+          run: "pnpm vitest run packages/core/src/engine/index-engine.test.ts" }
+  SCALE-PASTE-APPLY:         # slice 34 (P13) DONE — batch apply resolves columns O(1) (Map), total O(N) not O(N·C)
+    locators:
+      - { path: packages/core/src/editing/edit-session.ts, symbol: applyBatch }
+    asserted_by:
+      - { path: packages/core/src/editing/apply-batch.bench.ts, symbol: SCALE-PASTE-APPLY,
+          run: "pnpm exec vitest bench packages/core/src/editing/apply-batch.bench.ts --run" }
+      - { path: packages/core/src/editing/edit-session.test.ts, symbol: applyBatch,
+          run: "pnpm vitest run packages/core/src/editing/edit-session.test.ts" }
+  SCALE-SELECT-COALESCE:     # slice 35 (P14) PARTIAL — length<=1 short-circuit only (the common single-range drag).
+    # O(k log k) 2D coalesce (order-dependent) + single-projection memoization DEFERRED (rare, small k; behaviour/invalidation risk).
+    locators:
+      - { path: packages/core/src/selection/selection.ts, symbol: coalesceAll }
+    asserted_by:
+      - { path: packages/core/src/selection/selection-coalesce.bench.ts, symbol: SCALE-SELECT-COALESCE,
+          run: "pnpm exec vitest bench packages/core/src/selection/selection-coalesce.bench.ts --run" }
+      - { path: packages/core/src/selection/selection.test.ts, symbol: INV-SELECTION-WELLFORMED,
+          run: "pnpm vitest run packages/core/src/selection/selection.test.ts" }
+
+  # --- v1.5 formula support (CE-FORMULA-ENGINE / -RECALC / -GRID-WIRE) — slices 36–38, BUILT ---
+  # LIB-FORMULA-ENTRY routes through the existing (changed-but-bound) LIB-UPDATE-CELL /
+  # COMPONENT-DATA-WORKER, which keep their locators. CAP-FORMULA/-RECALC stay transitive.
+  ENTITY-FORMULA-CELL:       # slice 36 — sidecar Map<cellId, FormulaCell> (src/ast/refs/value)
+    locators:
+      - { path: packages/core/src/formula/engine.ts, symbol: FormulaEngine }
+      - { path: packages/core/src/formula/values.ts, symbol: FormulaError }
+    asserted_by:
+      - { path: packages/core/src/formula/formula.test.ts, symbol: "ENTITY-FORMULA-ERROR",
+          run: "pnpm vitest run packages/core/src/formula/formula.test.ts" }
+  ENTITY-DEP-GRAPH:          # slice 37 — precedents/dependents keyed by (rowKey, columnId)
+    locators:
+      - { path: packages/core/src/formula/engine.ts, symbol: FormulaEngine }
+    asserted_by:
+      - { path: packages/core/src/formula/formula.test.ts, symbol: "CAP-FORMULA-RECALC — dependency graph",
+          run: "pnpm vitest run packages/core/src/formula/formula.test.ts -t 'dependency graph'" }
+  LIB-FORMULA-GET:           # slice 38 — getCellFormula(rowKey, columnId): the edit-seed hook
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: getCellFormula }
+      - { path: packages/core/src/formula/engine.ts, symbol: getSource }
+    asserted_by:
+      - { path: packages/core/src/formula/formula-grid.test.ts, symbol: "AC-FORMULA-DERIVED",
+          run: "pnpm vitest run packages/core/src/formula/formula-grid.test.ts" }
+      - { path: e2e/formula.spec.ts, symbol: "getCellFormula returns the source",
+          run: "pnpm exec playwright test e2e/formula.spec.ts -g 'getCellFormula'" }
+  LIB-FORMULA-RECALC:        # slice 37 — recalculate(): full recalc, fires EVT-AFTER-RECALC
+    locators:
+      - { path: packages/core/src/api/grid.ts, symbol: recalculate }
+      - { path: packages/core/src/engine/index-engine.ts, symbol: recalcAllFormulas }
+    asserted_by:
+      - { path: packages/core/src/formula/formula-grid.test.ts, symbol: "LIB-FORMULA-RECALC",
+          run: "pnpm vitest run packages/core/src/formula/formula-grid.test.ts -t 'LIB-FORMULA-RECALC'" }
+  LIB-FORMULA-EVAL:          # slice 36 — pure AST evaluate, no store write (evaluateFormulaAst)
+    locators:
+      - { path: packages/core/src/formula/evaluator.ts, symbol: evaluate }
+      - { path: packages/core/src/formula/parser.ts, symbol: parseFormula }
+    asserted_by:
+      - { path: packages/core/src/formula/formula.test.ts, symbol: "operators & precedence",
+          run: "pnpm vitest run packages/core/src/formula/formula.test.ts -t 'precedence'" }
+  LIB-FORMULA-SPILL:         # v1.6 delta (doc-feature) — public getSpillRanges(): live spill ranges (canonical positional)
+    # BUILD-NEW: the worker engine substrate exists (FormulaEngine.getSpillRanges), but the
+    # public grid.getSpillRanges() method + the recalc-result carry are UNBUILT. Empty locators
+    # = the planner's build-new signal; Delivery binds the public method when it lands.
+    locators: []
+  EVT-AFTER-RECALC:          # slice 37 — notify after a recalc pass {changed,cycles,elapsedMs,trigger[,spillChanged]}
+    locators:
+      - { path: packages/core/src/api/event-bus.ts, symbol: afterRecalc }
+    asserted_by:
+      - { path: packages/core/src/formula/formula-grid.test.ts, symbol: "EVT-AFTER-RECALC",
+          run: "pnpm vitest run packages/core/src/formula/formula-grid.test.ts -t 'EVT-AFTER-RECALC'" }
+  # EVT-FORMULA-ERROR: [FUTURE-SCOPE] — the per-cell error-notify event is documented
+  # but NOT yet emitted; cycle/error counts surface via the EVT-AFTER-RECALC summary
+  # ({cycles}) and the in-cell #…! value instead.
+
+  # --- v1.6 formula catalog & advanced capabilities (CE-FORMULA-CATALOG/-VOLATILE/-REFVAL/-ARRAY) ---
+  # slices 42-45 — CE-FORMULA-* (v1.6): BUILT.
+  # CAP-FORMULA-FN(extended, 455 registry fns)/CAP-FORMULA-VOLATILE/-REFVAL/-ARRAY bind transitively.
+  # The additive `volatile` field extends the already-bound ENTITY-FORMULA-CELL (keeps its locators).
+  # The full function catalog is docs/formula-functions.md (registry entries, no new binding kind).
+  #
+  # --- v1.7 catalog completion (doc-feature, docs/formula-support.md "v1.7 delta") — BUILT (2026-07-12 adjudication) ---
+  # The ~20 deferred functions (MODE.MULT/PROB/AREAS/array-XLOOKUP/ARRAYTOTEXT; TREND/GROWTH/LINEST/
+  # LOGEST/MINVERSE/MDETERM/MUNIT; ACCRINT/PRICEMAT/YIELDMAT/ODDF*/ODDL*; GROUPBY/PIVOTBY) are
+  # CAP-FORMULA-FN registry entries in formula/functions.ts (registry 455→475; INFO dropped — wholly
+  # ABSENT, unregistered) — no per-fn binding (curated), asserted by the AC-CATALOG-V17 bucket A–D
+  # unit blocks in formula/formula.test.ts. CAP-FORMULA-INTERSECT (the `@` operator) is built across
+  # formula/{tokenizer,parser,ast,evaluator}.ts ('intersect' node; CAP-* transitive per header, not
+  # bound); INV-INTERSECT-SCALAR asserted by the 'CAP-FORMULA-INTERSECT — the @ operator' unit block
+  # (AC-FORMULA-INTERSECT). ISOMITTED is the 9th evaluator special form (evaluator.ts SPECIAL_FORMS).
+  ENTITY-SPILL-RANGE:        # slice 45 — CAP-FORMULA-ARRAY: anchor-owns-range materialized dynamic array (anchor/rows/cols)
+    # BUILT — spill state lives on FormulaEngine (spillShape/spillRegions/spilledInto);
+    # the queryable surface is getSpillRanges(); the A1# spill-ref is a `spillref` AST node.
+    locators:
+      - { path: packages/core/src/formula/engine.ts, symbol: getSpillRanges }
+      - { path: packages/core/src/formula/ast.ts, symbol: FormulaNode }  # 'spillref' variant
+    asserted_by:
+      - packages/core/src/formula/formula.test.ts  # "slice 45c (spill materialization)" + "A1# spill-reference operator"
+  ENTITY-CELL-REFERENCE:     # slice 44 — CAP-FORMULA-REFVAL: rectangular reference value in canonical coords (top/left/rows/cols)
+    # BUILT as `ReferenceValue` (kind:'reference'; top/left/rows/cols) — NOT the doc's earlier
+    # colStart/rowStart naming. REF_AWARE_FUNCTIONS receive it raw; else it dereferences.
+    locators:
+      - { path: packages/core/src/formula/eval-types.ts, symbol: ReferenceValue }
+    asserted_by:
+      - packages/core/src/formula/formula.test.ts  # "slice 44 (reference values)"
+  EVT-SPILL-CHANGE:          # v1.6 delta (doc-feature) — notify {anchor:{row,col}, rows, cols, blocked}, one per changed anchor
+    # SUBSTRATE BUILT, public emission SPECCED-UNBUILT (build target). The engine exposes the
+    # detection substrate (RecalcSummary.spillChanged + FormulaEngine.getSpillRanges), but the
+    # per-anchor spill-set diff, the recalc-result carry, and the public COMPONENT-API emission are
+    # UNBUILT. Locators point at the built substrate; Delivery repoints at the bus symbol +
+    # protocol field when the public event is emitted. Payload is CANONICAL POSITIONAL, not CellRef.
+    locators:
+      - { path: packages/core/src/formula/engine.ts, symbol: getSpillRanges }
+      - { path: packages/core/src/formula/engine.ts, symbol: RecalcSummary }  # .spillChanged flag
+
+# Coverage: in-progress first build. Unbound in-scope Contract-grade contracts are NOT gaps —
+# they are unbuilt slices (see IMPLEMENTATION.md). Binding grows per slice; kinds are curated
+# until their realizing slice lands.
+coverage:
+  curated:
+    ENTITY: "read-path entities bound (slice 1); edit/structural entities bind in later slices (locus: packages/core/src/)"
+    COMPONENT: "read-path components bound; interaction/edit/format/export components bind later (locus: packages/core/src/)"
+    LIB: "read-path API bound; mutation/view/structural LIB-* bind later (locus: packages/core/src/api/)"
+    EVT: "slice 2: event bus (EventBus) + EVT-ERROR/EVT-STATE-CHANGE bound; action before/after pairs bind with their slices (locus: packages/core/src/api/)"
+    MSG: "read+index protocol bound; mutation MSG-* bind with their slices (locus: packages/core/src/protocol/)"
+    INV: "3 read-path invariants bound; structural invariants bind with their slices (locus: packages/core/src/)"
+    DOM: "read-path DOM hooks bound; BIND-*/editor/menu DOM bind with interaction slices (locus: packages/core/src/render/)"

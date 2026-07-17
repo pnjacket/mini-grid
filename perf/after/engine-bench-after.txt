@@ -1,0 +1,10 @@
+(node:368665) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+mini-grid IndexEngine micro-benchmark
+=====================================
+rows:              1,000,000
+row generation:    182.4 ms
+load + index build: 244.6 ms   (SEQ-MOUNT data portion)
+sort 1M rows:      267.9 ms   (SEQ-SORT engine time)
+filter 1M rows:    159.5 ms   (SEQ-FILTER engine time)
+filtered rowCount: 499,999 / 1,000,000

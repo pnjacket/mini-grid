@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mini-grid demo — i18n + RTL</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+      header {
+        padding: 8px 12px;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+      }
+      #app {
+        position: relative;
+        height: calc(100vh - 42px);
+      }
+      [data-mini-grid] {
+        height: 100%;
+      }
+      [data-mini-grid] .mg-scroll {
+        height: 100%;
+      }
+      [data-mini-grid] .mg-header {
+        height: 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>mini-grid demo — i18n + RTL (<span id="status">loading…</span>)</header>
+    <div id="app"></div>
+    <script type="module" src="./i18n.js"></script>
+  </body>
+</html>

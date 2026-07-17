@@ -1,0 +1,12 @@
+serving /home/david/projects/mini-grid at http://127.0.0.1:32783/demo/index.html
+  paste run 1: 55.3 ms  block=13750 cells (rows 0..1249, ~10000 applied)
+  paste run 2: 111.1 ms  block=13750 cells (rows 1251..2500, ~10000 applied)
+  paste run 3: 70.9 ms  block=13750 cells (rows 2502..3751, ~10000 applied)
+  paste run 4: 98.2 ms  block=13750 cells (rows 3753..5002, ~10000 applied)
+  paste run 5: 68.3 ms  block=13750 cells (rows 5004..6253, ~10000 applied)
+
+================ SEQ-PASTE RESULT ================
+  block: 1250 rows x 11 cols = 13750 cells; ~10000 applied (editable)
+  per-run (ms): [55.3, 111.1, 70.9, 98.2, 68.3]
+  MEDIAN grid.paste(): 70.9 ms  (PERF-PASTE target ≤ 300ms)
+==================================================
